@@ -29,4 +29,48 @@ public class GerentePedidos {
     public void mostrarFila() {
         System.out.println("Fila atual: " + fila);
     }
+
+    /*Solução 1 — synchronized (simples, mas mais lento)
+      Garante exclusividade, mas bloqueia todas as threads em cada chamada.
+    public static synchronized GerentePedidos getInstance() {
+        if (instancia == null) {
+            instancia = new GerentePedidos();
+        }
+        return instancia;
+    }
+
+      Solução 2 — Double-checked locking (recomendada)
+      Bloqueia só na criação. Depois, acesso sem custo.
+
+    Javaprivate static volatile GerentePedidos instancia = null;
+
+    public static GerentePedidos getInstance() {
+        if (instancia == null) {                    // 1ª verificação — sem lock
+            synchronized (GerentePedidos.class) {
+                if (instancia == null) {             // 2ª verificação — com lock
+                    instancia = new GerentePedidos();
+                }
+            }
+        }
+        return instancia;
+    }
+
+    Solução 3 — Initialization-on-demand (a mais elegante em Java)
+    Thread-safe sem synchronized. Criação lazy. Sem volatile. Preferida.
+
+    Javaclass GerentePedidos {
+        private GerentePedidos() {}
+
+        // A JVM garante que esta classe interna é carregada uma única vez
+        private static class Holder {
+            static final GerentePedidos INSTANCIA = new GerentePedidos();
+        }
+
+        public static GerentePedidos getInstance() {
+            return Holder.INSTANCIA;
+        }
+    }
+
+    */
+
 }

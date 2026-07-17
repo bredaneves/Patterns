@@ -26,7 +26,7 @@ Com Singleton: existe um único Gerente de Pedidos. Qualquer atendente que preci
 O problema de corrida (race condition):
 Thread A verifica: instancia == null → verdadeiro → vai criar
 Thread B verifica: instancia == null → verdadeiro → vai criar também
-Resultado: dois objetos criados. O Singleton quebrou.
+Resultado: dois objetos criados. O Singleton quebrou. Ver alternativas comentadas na classe GerentePedidos.
 */
 
 public class Main {
