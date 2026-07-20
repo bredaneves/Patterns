@@ -25,6 +25,12 @@ Chegou um fornecedor italiano premium que trabalha só com libras (lb). O sistem
 Situação: o sistema de estoque espera um objeto com o método entregarEmKg().
 O fornecedor italiano só tem deliverInPounds(). Você não pode mudar nenhum dos dois — o estoque é legado e o fornecedor é externo.
 Solução: criar um Adapter que "traduz" a chamada — recebe entregarEmKg(), converte para libras, e chama deliverInPounds().
+
+Regra de ouro: use Adapter quando você tem código que não pode mudar dos dois lados e precisa fazê-los conversar.
+É o padrão do "plug de tomada" — você não muda a tomada nem o aparelho, só usa um adaptador.
+
+O estoque nunca soube da conversão. O Adapter absorveu toda a incompatibilidade.
+Isso é exatamente o que acontece quando você integra APIs externas com sistemas legados — contexto que você conhece bem do mundo ERP.
  */
 
 public class Main {

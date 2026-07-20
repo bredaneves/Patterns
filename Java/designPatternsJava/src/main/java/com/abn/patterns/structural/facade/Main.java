@@ -24,6 +24,12 @@ Situação sem Facade: o gerente precisa conhecer todos os subsistemas em detalh
 Se um novo funcionário assumir, precisa aprender tudo do zero. Se a ordem mudar, é necessário atualizar em vários lugares.
 
 Solução: uma Facade com um único método abrirPizzaria() que encapsula toda a sequência internamente.
+
+Diferença do Adapter: o Adapter serve para compatibilidade entre interfaces incompatíveis.
+A Facade serve para simplificar um conjunto complexo de interfaces que já funcionam — mas que são trabalhosas de usar diretamente.
+
+Onde você já viu isso: o Datasul/ERP inteiro é uma grande Facade — você chama uma rotina de faturamento e ela internamente aciona fiscal,
+estoque, financeiro, contabilidade. Você não precisa saber a ordem de cada módulo.
  */
 
 public class Main {

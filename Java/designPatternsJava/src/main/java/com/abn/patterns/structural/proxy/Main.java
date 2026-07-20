@@ -34,6 +34,9 @@ Logging Proxy — registra cada acesso para auditoria.
 
 Diferença do Facade: a Facade simplifica múltiplos subsistemas numa interface nova.
 O Proxy mantém a mesma interface do objeto original — quem usa não percebe que está falando com um intermediário.
+
+Onde você já viu isso: o Spring usa Proxy extensivamente — quando você anota um método com @Transactional ou @Cacheable,
+o Spring cria um proxy transparente em volta do seu bean que intercepta a chamada e gerencia transação ou cache antes de delegar ao método real.
  */
 
 public class Main {

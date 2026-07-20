@@ -3,6 +3,7 @@ package com.abn.patterns.structural.bridge;
 /* GERAL
 
 Os quatro restantes — cada um resolve um problema distinto
+
 Bridge — o problema é explosão de subclasses.
 Você tem duas dimensões que variam independentemente (ex: tipo de pizza + canal de entrega).
 Sem Bridge, cada combinação vira uma classe separada.
