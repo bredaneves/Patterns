@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Behavioral Patterns — Parte 1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+  header { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 20px 24px; text-align: center; }
+  header h1 { font-size: 1.3rem; color: #f472b6; letter-spacing: 0.03em; }
+  header p  { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+  .tabs { display: flex; background: #1a1d27; border-bottom: 1px solid #2d3148; overflow-x: auto; }
+  .tab { padding: 13px 16px; font-size: 0.81rem; font-weight: 600; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab:hover { color: #f9a8d4; }
+  .tab.active { color: #f472b6; border-bottom-color: #f472b6; }
+  .panel { display: none; padding: 24px; max-width: 920px; margin: 0 auto; }
+  .panel.active { display: block; }
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .section-sub { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+  .prob  { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f59e0b; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .prob strong { color:#fbbf24; }
+  .hi   { background:#1e2030; border:1px solid #f472b644; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#f9a8d4; line-height:1.75; }
+  .hi strong { color:#f472b6; }
+  .ok   { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #34d399; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .ok strong { color:#6ee7b7; }
+  .warn { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f87171; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .warn strong { color:#fca5a5; }
+  .code-block { background:#12141c; border:1px solid #2d3148; border-radius:8px; padding:20px; font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:0.77rem; line-height:1.85; overflow-x:auto; margin-bottom:16px; position:relative; white-space:pre; }
+  .code-block .lbl { position:absolute; top:10px; right:14px; font-family:system-ui,sans-serif; font-size:0.68rem; color:#475569; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .kw{color:#c084fc;} .cl{color:#67e8f9;} .mt{color:#86efac;} .st{color:#fde68a;} .cm{color:#475569;font-style:italic;}
+  .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:12px 0 20px; font-size:0.8rem; }
+  .fb  { background:#1e2030; border:1px solid #2d3148; border-radius:6px; padding:6px 12px; color:#e2e8f0; white-space:nowrap; }
+  .fhi { background:#2a1020; border:1px solid #f472b655; border-radius:6px; padding:6px 12px; color:#f472b6; font-weight:700; white-space:nowrap; }
+  .fa  { color:#4b5563; }
+  .diff-table { width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:20px; }
+  .diff-table th { background:#1e2030; color:#f472b6; padding:10px 14px; text-align:left; font-weight:700; border-bottom:2px solid #2d3148; }
+  .diff-table td { padding:10px 14px; border-bottom:1px solid #1e2030; color:#cbd5e1; vertical-align:top; }
+  .diff-table tr:nth-child(even) td { background:#12141c; }
+  h3 { font-size:0.85rem; color:#94a3b8; margin:20px 0 8px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Behavioral Patterns — Parte 1</h1>
+  <p>Strategy · State · Command — comportamento variável na pizzaria</p>
+</header>
+<div class="tabs">
+  <button class="tab active" onclick="show('intro')">Visão geral</button>
+  <button class="tab" onclick="show('strategy-prob')">Strategy — problema</button>
+  <button class="tab" onclick="show('strategy-cod')">Strategy — código</button>
+  <button class="tab" onclick="show('state-prob')">State — problema</button>
+  <button class="tab" onclick="show('state-cod')">State — código</button>
+  <button class="tab" onclick="show('command-prob')">Command — problema</button>
+  <button class="tab" onclick="show('command-cod')">Command — código</button>
+  <button class="tab" onclick="show('comparacao')">Comparação final</button>
+</div>
+
+<!-- INTRO -->
+<div id="intro" class="panel active">
+  <div class="section-title">Por que esses três confundem?</div>
+  <div class="section-sub">Strategy, State e Command todos encapsulam comportamento num objeto. A diferença está em <strong>quem decide</strong> qual comportamento usar e <strong>quando</strong>.</div>
+  <div class="prob">
+    <strong>Strategy</strong> — o comportamento varia por escolha do cliente.<br>
+    "Quero pagar de um jeito diferente" — você troca o algoritmo conscientemente.<br><br>
+    <strong>State</strong> — o comportamento varia porque o objeto mudou de estado interno.<br>
+    "O pedido está em estados diferentes" — o próprio objeto muda de comportamento automaticamente.<br><br>
+    <strong>Command</strong> — o comportamento é encapsulado como objeto para ser enfileirado, desfeito ou registrado.<br>
+    "Quero guardar o que foi feito para desfazer depois" — a ação vira um objeto.
+  </div>
+  <div class="flow">
+    <div class="fb">Cliente escolhe forma de pagamento</div><div class="fa">→</div><div class="fhi">Strategy</div>
+  </div>
+  <div class="flow">
+    <div class="fb">Pedido muda de estado sozinho</div><div class="fa">→</div><div class="fhi">State</div>
+  </div>
+  <div class="flow">
+    <div class="fb">Ação vira objeto para desfazer/enfileirar</div><div class="fa">→</div><div class="fhi">Command</div>
+  </div>
+</div>
+
+<!-- STRATEGY PROBLEMA -->
+<div id="strategy-prob" class="panel">
+  <div class="section-title">Strategy — o problema</div>
+  <div class="section-sub">A pizzaria aceita diferentes formas de pagamento: dinheiro, cartão e Pix. O cálculo muda em cada caso — dinheiro pode ter troco, cartão tem taxa, Pix tem desconto.</div>
+  <div class="prob">
+    <strong>Sem Strategy:</strong> um único método cheio de if/else:<br><br>
+    <code>if (forma == "dinheiro") ... else if (forma == "cartão") ... else if (forma == "pix") ...</code><br><br>
+    Toda vez que surge uma nova forma de pagamento, você abre esse método e arrisca quebrar as que já funcionam. Viola o princípio Open/Closed.
+  </div>
+  <div class="hi">
+    <strong>Com Strategy:</strong> cada algoritmo de pagamento vira uma classe separada. O caixa não sabe qual está usando — só chama <code>pagar()</code>. Trocar a forma de pagamento é trocar o objeto.
+  </div>
+  <h3>Estrutura</h3>
+  <div class="flow">
+    <div class="fb">Caixa</div><div class="fa">→ usa →</div>
+    <div class="fhi">FormaPagamento (interface)</div><div class="fa">← implementado por →</div>
+    <div class="fb">Dinheiro / Cartão / Pix</div>
+  </div>
+</div>
+
+<!-- STRATEGY CÓDIGO -->
+<div id="strategy-cod" class="panel">
+  <div class="section-title">Strategy — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// STRATEGY — interface comum para todos os algoritmos</span>
+<span class="kw">interface</span> <span class="cl">FormaPagamento</span> {
+    <span class="kw">void</span> <span class="mt">pagar</span>(<span class="kw">double</span> valor);
+}
+
+<span class="cm">// ESTRATÉGIAS CONCRETAS</span>
+<span class="kw">class</span> <span class="cl">PagamentoDinheiro</span> <span class="kw">implements</span> <span class="cl">FormaPagamento</span> {
+    <span class="kw">public void</span> <span class="mt">pagar</span>(<span class="kw">double</span> valor) {
+        System.out.println(<span class="st">"Pago em dinheiro: R$"</span> + valor + <span class="st">" — aguarde o troco"</span>);
+    }
+}
+<span class="kw">class</span> <span class="cl">PagamentoCartao</span> <span class="kw">implements</span> <span class="cl">FormaPagamento</span> {
+    <span class="kw">public void</span> <span class="mt">pagar</span>(<span class="kw">double</span> valor) {
+        <span class="kw">double</span> total = valor * 1.03; <span class="cm">// 3% de taxa</span>
+        System.out.println(<span class="st">"Pago no cartão: R$"</span> + total + <span class="st">" (com taxa)"</span>);
+    }
+}
+<span class="kw">class</span> <span class="cl">PagamentoPix</span> <span class="kw">implements</span> <span class="cl">FormaPagamento</span> {
+    <span class="kw">public void</span> <span class="mt">pagar</span>(<span class="kw">double</span> valor) {
+        <span class="kw">double</span> total = valor * 0.95; <span class="cm">// 5% de desconto</span>
+        System.out.println(<span class="st">"Pago via Pix: R$"</span> + total + <span class="st">" (com desconto)"</span>);
+    }
+}
+
+<span class="cm">// CONTEXTO — o caixa não sabe qual estratégia está usando</span>
+<span class="kw">class</span> <span class="cl">Caixa</span> {
+    <span class="kw">private</span> <span class="cl">FormaPagamento</span> formaPagamento;
+
+    <span class="cm">// Estratégia pode ser trocada em tempo de execução</span>
+    <span class="kw">public void</span> <span class="mt">setFormaPagamento</span>(<span class="cl">FormaPagamento</span> forma) {
+        <span class="kw">this</span>.formaPagamento = forma;
+    }
+
+    <span class="kw">public void</span> <span class="mt">finalizarPedido</span>(<span class="kw">double</span> valor) {
+        formaPagamento.<span class="mt">pagar</span>(valor);
+    }
+}
+
+<span class="cm">// USO</span>
+<span class="cl">Caixa</span> caixa = <span class="kw">new</span> <span class="cl">Caixa</span>();
+
+caixa.<span class="mt">setFormaPagamento</span>(<span class="kw">new</span> <span class="cl">PagamentoPix</span>());
+caixa.<span class="mt">finalizarPedido</span>(50.0); <span class="cm">// Pago via Pix: R$47.5 (com desconto)</span>
+
+caixa.<span class="mt">setFormaPagamento</span>(<span class="kw">new</span> <span class="cl">PagamentoCartao</span>());
+caixa.<span class="mt">finalizarPedido</span>(50.0); <span class="cm">// Pago no cartão: R$51.5 (com taxa)</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> <code>Comparator</code> do Java é Strategy puro — você passa o algoritmo de comparação como objeto. No Spring, qualquer bean que implementa uma interface e é injetado via <code>@Autowired</code> dependendo do perfil é Strategy.
+  </div>
+</div>
+
+<!-- STATE PROBLEMA -->
+<div id="state-prob" class="panel">
+  <div class="section-title">State — o problema</div>
+  <div class="section-sub">Um pedido na pizzaria passa por estados: Recebido → Preparando → Saiu para entrega → Entregue. O que pode ser feito com o pedido muda completamente dependendo do estado — não dá pra cancelar um pedido que já saiu para entrega.</div>
+  <div class="prob">
+    <strong>Sem State:</strong> o objeto Pedido fica cheio de ifs verificando o estado atual antes de cada operação:<br><br>
+    <code>if (estado == "recebido") { ... } else if (estado == "preparando") { ... }</code><br><br>
+    Cada método tem esse bloco. Adicionar um novo estado exige abrir todos os métodos.
+  </div>
+  <div class="hi">
+    <strong>Com State:</strong> cada estado vira uma classe. O pedido delega o comportamento para o estado atual. Quando o estado muda, o objeto passa a se comportar de forma completamente diferente — automaticamente.
+  </div>
+  <div class="prob">
+    <strong>Diferença chave do Strategy:</strong> no Strategy você troca o algoritmo conscientemente de fora. No State o próprio objeto troca seu estado internamente conforme eventos acontecem.
+  </div>
+</div>
+
+<!-- STATE CÓDIGO -->
+<div id="state-cod" class="panel">
+  <div class="section-title">State — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// INTERFACE DE ESTADO</span>
+<span class="kw">interface</span> <span class="cl">EstadoPedido</span> {
+    <span class="kw">void</span> <span class="mt">avancar</span>(<span class="cl">Pedido</span> pedido);
+    <span class="kw">void</span> <span class="mt">cancelar</span>(<span class="cl">Pedido</span> pedido);
+    String <span class="mt">getDescricao</span>();
+}
+
+<span class="cm">// ESTADOS CONCRETOS</span>
+<span class="kw">class</span> <span class="cl">EstadoRecebido</span> <span class="kw">implements</span> <span class="cl">EstadoPedido</span> {
+    <span class="kw">public void</span> <span class="mt">avancar</span>(<span class="cl">Pedido</span> pedido) {
+        System.out.println(<span class="st">"Pedido foi para a cozinha."</span>);
+        pedido.<span class="mt">setEstado</span>(<span class="kw">new</span> <span class="cl">EstadoPreparando</span>());
+    }
+    <span class="kw">public void</span> <span class="mt">cancelar</span>(<span class="cl">Pedido</span> pedido) {
+        System.out.println(<span class="st">"Pedido cancelado antes de iniciar."</span>);
+        pedido.<span class="mt">setEstado</span>(<span class="kw">new</span> <span class="cl">EstadoCancelado</span>());
+    }
+    <span class="kw">public</span> String <span class="mt">getDescricao</span>() { <span class="kw">return</span> <span class="st">"Recebido"</span>; }
+}
+
+<span class="kw">class</span> <span class="cl">EstadoPreparando</span> <span class="kw">implements</span> <span class="cl">EstadoPedido</span> {
+    <span class="kw">public void</span> <span class="mt">avancar</span>(<span class="cl">Pedido</span> pedido) {
+        System.out.println(<span class="st">"Pizza saiu para entrega."</span>);
+        pedido.<span class="mt">setEstado</span>(<span class="kw">new</span> <span class="cl">EstadoEmEntrega</span>());
+    }
+    <span class="kw">public void</span> <span class="mt">cancelar</span>(<span class="cl">Pedido</span> pedido) {
+        System.out.println(<span class="st">"Cancelado durante preparo — cobrança parcial."</span>);
+        pedido.<span class="mt">setEstado</span>(<span class="kw">new</span> <span class="cl">EstadoCancelado</span>());
+    }
+    <span class="kw">public</span> String <span class="mt">getDescricao</span>() { <span class="kw">return</span> <span class="st">"Preparando"</span>; }
+}
+
+<span class="kw">class</span> <span class="cl">EstadoEmEntrega</span> <span class="kw">implements</span> <span class="cl">EstadoPedido</span> {
+    <span class="kw">public void</span> <span class="mt">avancar</span>(<span class="cl">Pedido</span> pedido) {
+        System.out.println(<span class="st">"Pizza entregue!"</span>);
+        pedido.<span class="mt">setEstado</span>(<span class="kw">new</span> <span class="cl">EstadoEntregue</span>());
+    }
+    <span class="kw">public void</span> <span class="mt">cancelar</span>(<span class="cl">Pedido</span> pedido) {
+        System.out.println(<span class="st">"Não é possível cancelar — pedido já saiu para entrega."</span>);
+    }
+    <span class="kw">public</span> String <span class="mt">getDescricao</span>() { <span class="kw">return</span> <span class="st">"Em entrega"</span>; }
+}
+
+<span class="kw">class</span> <span class="cl">EstadoEntregue</span> <span class="kw">implements</span> <span class="cl">EstadoPedido</span> {
+    <span class="kw">public void</span> <span class="mt">avancar</span>(<span class="cl">Pedido</span> pedido)  { System.out.println(<span class="st">"Pedido já finalizado."</span>); }
+    <span class="kw">public void</span> <span class="mt">cancelar</span>(<span class="cl">Pedido</span> pedido) { System.out.println(<span class="st">"Não é possível cancelar — já entregue."</span>); }
+    <span class="kw">public</span> String <span class="mt">getDescricao</span>() { <span class="kw">return</span> <span class="st">"Entregue"</span>; }
+}
+
+<span class="kw">class</span> <span class="cl">EstadoCancelado</span> <span class="kw">implements</span> <span class="cl">EstadoPedido</span> {
+    <span class="kw">public void</span> <span class="mt">avancar</span>(<span class="cl">Pedido</span> pedido)  { System.out.println(<span class="st">"Pedido cancelado — não pode avançar."</span>); }
+    <span class="kw">public void</span> <span class="mt">cancelar</span>(<span class="cl">Pedido</span> pedido) { System.out.println(<span class="st">"Já cancelado."</span>); }
+    <span class="kw">public</span> String <span class="mt">getDescricao</span>() { <span class="kw">return</span> <span class="st">"Cancelado"</span>; }
+}
+
+<span class="cm">// CONTEXTO — o Pedido delega tudo ao estado atual</span>
+<span class="kw">class</span> <span class="cl">Pedido</span> {
+    <span class="kw">private</span> <span class="cl">EstadoPedido</span> estado = <span class="kw">new</span> <span class="cl">EstadoRecebido</span>();
+
+    <span class="kw">public void</span> <span class="mt">setEstado</span>(<span class="cl">EstadoPedido</span> estado) { <span class="kw">this</span>.estado = estado; }
+    <span class="kw">public void</span> <span class="mt">avancar</span>()  { estado.<span class="mt">avancar</span>(<span class="kw">this</span>); }
+    <span class="kw">public void</span> <span class="mt">cancelar</span>() { estado.<span class="mt">cancelar</span>(<span class="kw">this</span>); }
+    <span class="kw">public</span> String <span class="mt">getEstado</span>() { <span class="kw">return</span> estado.<span class="mt">getDescricao</span>(); }
+}
+
+<span class="cm">// USO</span>
+<span class="cl">Pedido</span> pedido = <span class="kw">new</span> <span class="cl">Pedido</span>();
+System.out.println(pedido.<span class="mt">getEstado</span>()); <span class="cm">// Recebido</span>
+pedido.<span class="mt">avancar</span>();                        <span class="cm">// Pedido foi para a cozinha.</span>
+pedido.<span class="mt">avancar</span>();                        <span class="cm">// Pizza saiu para entrega.</span>
+pedido.<span class="mt">cancelar</span>();                       <span class="cm">// Não é possível cancelar — já saiu.</span>
+pedido.<span class="mt">avancar</span>();                        <span class="cm">// Pizza entregue!</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> workflow de NF-e no Datasul — uma nota em estado "autorizada" não pode ser editada, em "digitação" pode. Cada estado bloqueia ou libera operações diferentes. É State puro aplicado a processo fiscal.
+  </div>
+</div>
+
+<!-- COMMAND PROBLEMA -->
+<div id="command-prob" class="panel">
+  <div class="section-title">Command — o problema</div>
+  <div class="section-sub">A pizzaria quer um sistema onde o atendente registra pedidos numa comanda — e se errar, pode desfazer o último lançamento. Também quer enfileirar pedidos para a cozinha processar na ordem certa.</div>
+  <div class="prob">
+    <strong>Sem Command:</strong> a ação é executada diretamente e não existe histórico. Não há como desfazer, repetir ou enfileirar — a operação aconteceu e acabou.
+  </div>
+  <div class="hi">
+    <strong>Com Command:</strong> cada ação vira um objeto com <code>execute()</code> e <code>undo()</code>. Você pode guardar esses objetos numa lista, executar em ordem, desfazer o último, ou reenviar para outra fila.
+  </div>
+  <div class="prob">
+    <strong>Diferença do Strategy:</strong> Strategy troca o algoritmo de processamento. Command encapsula a <em>requisição</em> em si — quem chamou, o quê pediu, com quais parâmetros — para poder guardar, desfazer ou reenviar.
+  </div>
+</div>
+
+<!-- COMMAND CÓDIGO -->
+<div id="command-cod" class="panel">
+  <div class="section-title">Command — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// INTERFACE COMMAND</span>
+<span class="kw">interface</span> <span class="cl">Comando</span> {
+    <span class="kw">void</span> <span class="mt">execute</span>();
+    <span class="kw">void</span> <span class="mt">undo</span>();
+}
+
+<span class="cm">// RECEIVER — quem realmente sabe fazer a operação</span>
+<span class="kw">class</span> <span class="cl">Comanda</span> {
+    <span class="kw">private</span> List&lt;String&gt; itens = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="mt">adicionarItem</span>(String item) {
+        itens.add(item);
+        System.out.println(<span class="st">"[Comanda] Adicionado: "</span> + item);
+    }
+    <span class="kw">public void</span> <span class="mt">removerItem</span>(String item) {
+        itens.remove(item);
+        System.out.println(<span class="st">"[Comanda] Removido: "</span> + item);
+    }
+    <span class="kw">public void</span> <span class="mt">mostrar</span>() { System.out.println(<span class="st">"Comanda atual: "</span> + itens); }
+}
+
+<span class="cm">// COMMAND CONCRETO</span>
+<span class="kw">class</span> <span class="cl">AdicionarPizzaComando</span> <span class="kw">implements</span> <span class="cl">Comando</span> {
+    <span class="kw">private</span> <span class="cl">Comanda</span> comanda;
+    <span class="kw">private</span> String pizza;
+
+    <span class="kw">public</span> <span class="cl">AdicionarPizzaComando</span>(<span class="cl">Comanda</span> comanda, String pizza) {
+        <span class="kw">this</span>.comanda = comanda;
+        <span class="kw">this</span>.pizza = pizza;
+    }
+    <span class="kw">public void</span> <span class="mt">execute</span>() { comanda.<span class="mt">adicionarItem</span>(pizza); }
+    <span class="kw">public void</span> <span class="mt">undo</span>()    { comanda.<span class="mt">removerItem</span>(pizza); }
+}
+
+<span class="cm">// INVOKER — registra e executa comandos, mantém histórico</span>
+<span class="kw">class</span> <span class="cl">Atendente</span> {
+    <span class="kw">private</span> Deque&lt;<span class="cl">Comando</span>&gt; historico = <span class="kw">new</span> ArrayDeque&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="mt">executar</span>(<span class="cl">Comando</span> cmd) {
+        cmd.<span class="mt">execute</span>();
+        historico.<span class="mt">push</span>(cmd);
+    }
+
+    <span class="kw">public void</span> <span class="mt">desfazer</span>() {
+        <span class="kw">if</span> (!historico.<span class="mt">isEmpty</span>()) {
+            historico.<span class="mt">pop</span>().<span class="mt">undo</span>();
+        } <span class="kw">else</span> {
+            System.out.println(<span class="st">"Nada para desfazer."</span>);
+        }
+    }
+}
+
+<span class="cm">// USO</span>
+<span class="cl">Comanda</span>   comanda   = <span class="kw">new</span> <span class="cl">Comanda</span>();
+<span class="cl">Atendente</span> atendente = <span class="kw">new</span> <span class="cl">Atendente</span>();
+
+atendente.<span class="mt">executar</span>(<span class="kw">new</span> <span class="cl">AdicionarPizzaComando</span>(comanda, <span class="st">"Margherita"</span>));
+atendente.<span class="mt">executar</span>(<span class="kw">new</span> <span class="cl">AdicionarPizzaComando</span>(comanda, <span class="st">"Pepperoni"</span>));
+comanda.<span class="mt">mostrar</span>(); <span class="cm">// [Margherita, Pepperoni]</span>
+
+atendente.<span class="mt">desfazer</span>(); <span class="cm">// Remove Pepperoni</span>
+comanda.<span class="mt">mostrar</span>(); <span class="cm">// [Margherita]</span>
+
+atendente.<span class="mt">desfazer</span>(); <span class="cm">// Remove Margherita</span>
+comanda.<span class="mt">mostrar</span>(); <span class="cm">// []</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> Ctrl+Z em qualquer editor é Command. Filas de mensagens (RabbitMQ, Kafka) tratam cada mensagem como um Command. No Datasul, lançamentos contábeis que podem ser estornados seguem essa lógica — a operação inversa é o <code>undo()</code>.
+  </div>
+</div>
+
+<!-- COMPARAÇÃO -->
+<div id="comparacao" class="panel">
+  <div class="section-title">Comparação final — Strategy, State e Command</div>
+  <table class="diff-table">
+    <tr><th>Critério</th><th>Strategy</th><th>State</th><th>Command</th></tr>
+    <tr><td>O que encapsula?</td><td>Algoritmo / cálculo</td><td>Comportamento por estado</td><td>Requisição / ação</td></tr>
+    <tr><td>Quem troca?</td><td>O cliente, conscientemente</td><td>O próprio objeto, internamente</td><td>O invoker, via histórico</td></tr>
+    <tr><td>Objetivo principal</td><td>Flexibilidade de algoritmo</td><td>Máquina de estados</td><td>Desfazer / enfileirar ações</td></tr>
+    <tr><td>Analogia pizzaria</td><td>Forma de pagamento trocável</td><td>Pedido que avança de status</td><td>Comanda com Ctrl+Z</td></tr>
+  </table>
+  <div class="hi">
+    <strong>Pergunta de decisão:</strong><br><br>
+    "Quero trocar o algoritmo de fora?" → <strong>Strategy</strong><br>
+    "O objeto muda de comportamento conforme seu estado interno?" → <strong>State</strong><br>
+    "Preciso desfazer, enfileirar ou registrar ações?" → <strong>Command</strong>
+  </div>
+  <div class="warn">
+    <strong>Dica de entrevista:</strong> Strategy e State têm estrutura quase idêntica em código — ambos têm uma interface com implementações concretas. O que os diferencia é a intenção: State transita entre si mesmo internamente; Strategy é trocado externamente. Se o avaliador pedir pra diferenciar os dois, essa frase resolve.
+  </div>
+</div>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>

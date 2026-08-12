@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Builder vs Prototype</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+
+  header {
+    background: #1a1d27;
+    border-bottom: 1px solid #2d3148;
+    padding: 20px 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 1.3rem; color: #34d399; letter-spacing: 0.03em; }
+  header p  { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+
+  .tabs {
+    display: flex;
+    background: #1a1d27;
+    border-bottom: 1px solid #2d3148;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 14px 22px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #64748b;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    background: none;
+    border-top: none; border-left: none; border-right: none;
+  }
+  .tab:hover { color: #6ee7b7; }
+  .tab.active { color: #34d399; border-bottom-color: #34d399; }
+
+  .panel { display: none; padding: 24px; max-width: 900px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .section-sub   { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+
+  .problem-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .problem-box strong { color: #fbbf24; }
+
+  .code-block {
+    background: #12141c;
+    border: 1px solid #2d3148;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    position: relative;
+    white-space: pre;
+  }
+  .code-block .label {
+    position: absolute;
+    top: 10px; right: 14px;
+    font-family: system-ui, sans-serif;
+    font-size: 0.7rem;
+    color: #475569;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .kw  { color: #c084fc; }
+  .cl  { color: #67e8f9; }
+  .mt  { color: #86efac; }
+  .st  { color: #fde68a; }
+  .cm  { color: #475569; font-style: italic; }
+  .nm  { color: #f1f5f9; }
+
+  .highlight-box {
+    background: #1e2030;
+    border: 1px solid #34d39944;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #6ee7b7;
+    line-height: 1.7;
+  }
+  .highlight-box strong { color: #34d399; }
+
+  .warn-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-left: 4px solid #f87171;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .warn-box strong { color: #fca5a5; }
+
+  .diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-bottom: 20px;
+  }
+  .diff-table th {
+    background: #1e2030;
+    color: #34d399;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 2px solid #2d3148;
+  }
+  .diff-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #1e2030;
+    color: #cbd5e1;
+    vertical-align: top;
+  }
+  .diff-table tr:nth-child(even) td { background: #12141c; }
+
+  .arrow-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0 20px;
+    font-size: 0.8rem;
+  }
+  .flow-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: #e2e8f0;
+    white-space: nowrap;
+  }
+  .flow-arrow { color: #4b5563; font-size: 1rem; }
+
+  h3 { font-size: 0.9rem; color: #94a3b8; margin: 20px 0 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .big-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 600px) { .big-comparison { grid-template-columns: 1fr; } }
+
+  .compare-card {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .compare-card h4 { font-size: 0.9rem; color: #34d399; margin-bottom: 10px; }
+  .compare-card p  { font-size: 0.82rem; color: #94a3b8; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Builder &amp; Prototype</h1>
+  <p>Dois padrões de criação — mesma pizzaria, problemas diferentes</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('b-problema')">1. Builder — problema</button>
+  <button class="tab" onclick="show('b-codigo')">2. Builder — código</button>
+  <button class="tab" onclick="show('b-expand')">3. Builder — expansão</button>
+  <button class="tab" onclick="show('p-problema')">4. Prototype — problema</button>
+  <button class="tab" onclick="show('p-codigo')">5. Prototype — código</button>
+  <button class="tab" onclick="show('comparacao')">6. Comparação final</button>
+</div>
+
+<!-- ===== BUILDER: PROBLEMA ===== -->
+<div id="b-problema" class="panel active">
+  <div class="section-title">Builder — o problema que ele resolve</div>
+  <div class="section-sub">A pizzaria agora aceita pedidos personalizados. O cliente escolhe cada detalhe: tamanho, massa, molho, queijo, ingredientes extras, borda recheada ou não.</div>
+
+  <div class="problem-box">
+    <strong>Sem o Builder, como você criaria esse objeto?</strong><br><br>
+    Opção 1 — construtor gigante:<br>
+    <code>new Pizza("grande", "fina", "suave", "mussarela", true, "calabresa", "azeitona")</code><br><br>
+    Problema: 7 parâmetros. Qual é o quinto? Borda recheada? Queijo extra? Impossível saber sem olhar a assinatura do construtor toda vez.<br><br>
+    Opção 2 — setters em cadeia:<br>
+    <code>pizza.setTamanho(...); pizza.setMassa(...); pizza.setMolho(...);</code><br><br>
+    Problema: o objeto fica "pela metade" durante a montagem. Nada garante que todos os campos obrigatórios foram preenchidos antes de usar a pizza.
+  </div>
+
+  <div class="highlight-box">
+    <strong>O Builder resolve:</strong> ele monta o objeto passo a passo, em uma interface fluente e legível, e só entrega o objeto final quando você chamar <code>build()</code> — aí ele pode validar se está tudo certo.
+  </div>
+
+  <h3>Analogia visual</h3>
+  <div class="arrow-flow">
+    <div class="flow-box">PizzaBuilder</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">.tamanho("grande")</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">.massa("fina")</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">.molho("suave")</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">.queijo("mussarela")</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">.build() → Pizza pronta</div>
+  </div>
+
+  <div class="problem-box">
+    <strong>Comparação com os outros padrões que você aprendeu:</strong><br><br>
+    Factory Method / Abstract Factory → decidem <em>qual tipo</em> de objeto criar.<br>
+    Builder → decide <em>como montar</em> um objeto complexo, passo a passo.
+  </div>
+</div>
+
+<!-- ===== BUILDER: CÓDIGO ===== -->
+<div id="b-codigo" class="panel">
+  <div class="section-title">Builder — código completo</div>
+  <div class="section-sub">A Pizza tem muitos atributos opcionais. O Builder monta ela de forma legível e segura.</div>
+
+<div class="code-block"><span class="label">Java</span><span class="cm">// === PRODUTO ===</span>
+<span class="kw">class</span> <span class="cl">Pizza</span> {
+    <span class="kw">private final</span> String tamanho;
+    <span class="kw">private final</span> String massa;
+    <span class="kw">private final</span> String molho;
+    <span class="kw">private final</span> String queijo;
+    <span class="kw">private final boolean</span> bordaRecheada;
+    <span class="kw">private final</span> String ingredienteExtra;
+
+    <span class="cm">// Construtor privado — só o Builder pode criar</span>
+    <span class="kw">private</span> <span class="cl">Pizza</span>(<span class="cl">Builder</span> builder) {
+        <span class="kw">this</span>.tamanho         = builder.tamanho;
+        <span class="kw">this</span>.massa           = builder.massa;
+        <span class="kw">this</span>.molho           = builder.molho;
+        <span class="kw">this</span>.queijo          = builder.queijo;
+        <span class="kw">this</span>.bordaRecheada   = builder.bordaRecheada;
+        <span class="kw">this</span>.ingredienteExtra = builder.ingredienteExtra;
+    }
+
+    <span class="kw">public void</span> <span class="mt">descrever</span>() {
+        System.out.println(<span class="st">"Pizza "</span> + tamanho + <span class="st">", massa "</span> + massa
+            + <span class="st">", molho "</span> + molho + <span class="st">", queijo "</span> + queijo
+            + (bordaRecheada ? <span class="st">", borda recheada"</span> : <span class="st">""</span>)
+            + (ingredienteExtra != <span class="kw">null</span> ? <span class="st">", extra: "</span> + ingredienteExtra : <span class="st">""</span>));
+    }
+
+    <span class="cm">// === BUILDER (classe interna) ===</span>
+    <span class="kw">static class</span> <span class="cl">Builder</span> {
+        <span class="cm">// Obrigatórios</span>
+        <span class="kw">private final</span> String tamanho;
+        <span class="kw">private final</span> String massa;
+
+        <span class="cm">// Opcionais com padrão</span>
+        <span class="kw">private</span> String molho           = <span class="st">"clássico"</span>;
+        <span class="kw">private</span> String queijo          = <span class="st">"mussarela"</span>;
+        <span class="kw">private boolean</span> bordaRecheada  = <span class="kw">false</span>;
+        <span class="kw">private</span> String ingredienteExtra = <span class="kw">null</span>;
+
+        <span class="cm">// Obrigatórios entram no construtor do Builder</span>
+        <span class="kw">public</span> <span class="cl">Builder</span>(String tamanho, String massa) {
+            <span class="kw">this</span>.tamanho = tamanho;
+            <span class="kw">this</span>.massa   = massa;
+        }
+
+        <span class="cm">// Cada método retorna o próprio Builder → encadeamento fluente</span>
+        <span class="kw">public</span> <span class="cl">Builder</span> <span class="mt">molho</span>(String molho)                { <span class="kw">this</span>.molho = molho; <span class="kw">return this</span>; }
+        <span class="kw">public</span> <span class="cl">Builder</span> <span class="mt">queijo</span>(String queijo)              { <span class="kw">this</span>.queijo = queijo; <span class="kw">return this</span>; }
+        <span class="kw">public</span> <span class="cl">Builder</span> <span class="mt">bordaRecheada</span>()                   { <span class="kw">this</span>.bordaRecheada = <span class="kw">true</span>; <span class="kw">return this</span>; }
+        <span class="kw">public</span> <span class="cl">Builder</span> <span class="mt">ingredienteExtra</span>(String ingrediente) { <span class="kw">this</span>.ingredienteExtra = ingrediente; <span class="kw">return this</span>; }
+
+        <span class="cm">// Entrega o objeto final</span>
+        <span class="kw">public</span> <span class="cl">Pizza</span> <span class="mt">build</span>() { <span class="kw">return new</span> <span class="cl">Pizza</span>(<span class="kw">this</span>); }
+    }
+}
+
+<span class="cm">// === USO — leitura quase como linguagem natural ===</span>
+<span class="cl">Pizza</span> p1 = <span class="kw">new</span> <span class="cl">Pizza.Builder</span>(<span class="st">"grande"</span>, <span class="st">"fina"</span>)
+    .<span class="mt">molho</span>(<span class="st">"suave"</span>)
+    .<span class="mt">queijo</span>(<span class="st">"mussarela"</span>)
+    .<span class="mt">bordaRecheada</span>()
+    .<span class="mt">build</span>();
+p1.<span class="mt">descrever</span>(); <span class="cm">// Pizza grande, massa fina, molho suave, mussarela, borda recheada</span>
+
+<span class="cl">Pizza</span> p2 = <span class="kw">new</span> <span class="cl">Pizza.Builder</span>(<span class="st">"média"</span>, <span class="st">"grossa"</span>)
+    .<span class="mt">molho</span>(<span class="st">"picante"</span>)
+    .<span class="mt">ingredienteExtra</span>(<span class="st">"pepperoni"</span>)
+    .<span class="mt">build</span>();
+p2.<span class="mt">descrever</span>(); <span class="cm">// Pizza média, massa grossa, molho picante, mussarela, extra: pepperoni</span>
+</div>
+
+  <div class="highlight-box">
+    <strong>O que o Builder garante:</strong> tamanho e massa são obrigatórios (entram no construtor do Builder). O resto é opcional com valor padrão. Você nunca entrega um objeto incompleto porque <code>build()</code> é o único caminho.
+  </div>
+</div>
+
+<!-- ===== BUILDER: EXPANSÃO ===== -->
+<div id="b-expand" class="panel">
+  <div class="section-title">Builder — depois da expansão</div>
+  <div class="section-sub">A pizzaria quer oferecer combos prontos: "Italiana Clássica" e "Americana Especial" — configurações pré-definidas sem o cliente precisar escolher tudo.</div>
+
+  <div class="problem-box">
+    <strong>Solução:</strong> criar um <strong>Diretor</strong> — uma classe que sabe como usar o Builder para montar configurações específicas. O Builder continua o mesmo.
+  </div>
+
+<div class="code-block"><span class="label">Java</span><span class="cm">// O Builder não muda. Criamos só um Diretor.</span>
+<span class="kw">class</span> <span class="cl">PizzaioDiretor</span> {
+    <span class="kw">public</span> <span class="cl">Pizza</span> <span class="mt">montarItalianaClassica</span>() {
+        <span class="kw">return new</span> <span class="cl">Pizza.Builder</span>(<span class="st">"grande"</span>, <span class="st">"fina"</span>)
+            .<span class="mt">molho</span>(<span class="st">"suave"</span>)
+            .<span class="mt">queijo</span>(<span class="st">"mussarela fresca"</span>)
+            .<span class="mt">build</span>();
+    }
+
+    <span class="kw">public</span> <span class="cl">Pizza</span> <span class="mt">montarAmericanaEspecial</span>() {
+        <span class="kw">return new</span> <span class="cl">Pizza.Builder</span>(<span class="st">"família"</span>, <span class="st">"grossa"</span>)
+            .<span class="mt">molho</span>(<span class="st">"picante"</span>)
+            .<span class="mt">queijo</span>(<span class="st">"cheddar"</span>)
+            .<span class="mt">bordaRecheada</span>()
+            .<span class="mt">ingredienteExtra</span>(<span class="st">"bacon"</span>)
+            .<span class="mt">build</span>();
+    }
+}
+
+<span class="cm">// Uso com o Diretor</span>
+<span class="cl">PizzaioDiretor</span> diretor = <span class="kw">new</span> <span class="cl">PizzaioDiretor</span>();
+<span class="cl">Pizza</span> italiana = diretor.<span class="mt">montarItalianaClassica</span>();
+<span class="cl">Pizza</span> americana = diretor.<span class="mt">montarAmericanaEspecial</span>();
+</div>
+
+  <div class="highlight-box">
+    <strong>Builder + Diretor:</strong> o Builder sabe <em>como</em> montar. O Diretor sabe <em>o que</em> montar. Você pode ter vários diretores (cardápio vegetariano, cardápio infantil) usando o mesmo Builder.
+  </div>
+</div>
+
+<!-- ===== PROTOTYPE: PROBLEMA ===== -->
+<div id="p-problema" class="panel">
+  <div class="section-title">Prototype — o problema que ele resolve</div>
+  <div class="section-sub">A pizzaria tem um cardápio com pizzas que são quase iguais — a "Calabresa Dupla" é igual à "Calabresa" mas com dobro do ingrediente. Criar do zero toda vez é custoso e repetitivo.</div>
+
+  <div class="problem-box">
+    <strong>Problema:</strong> você tem um objeto já configurado e quer criar variações dele sem reconfigurar tudo do zero. Copiar o objeto manualmente é trabalhoso e acoplado — você precisaria saber todos os atributos internos.
+  </div>
+
+  <div class="highlight-box">
+    <strong>O Prototype resolve:</strong> o próprio objeto sabe como se copiar. Você chama <code>clonar()</code> e recebe uma cópia independente, que pode modificar sem afetar o original.
+  </div>
+
+  <h3>Analogia visual</h3>
+  <div class="arrow-flow">
+    <div class="flow-box">Pizza Calabresa (original)</div>
+    <div class="flow-arrow">→ .clonar()</div>
+    <div class="flow-box">Pizza Calabresa (cópia)</div>
+    <div class="flow-arrow">→ ajusta ingrediente</div>
+    <div class="flow-box">Pizza Calabresa Dupla</div>
+  </div>
+
+  <div class="warn-box">
+    <strong>Diferença importante para o Builder:</strong><br><br>
+    Builder → monta um objeto novo do zero, passo a passo.<br>
+    Prototype → copia um objeto que já existe e ajusta o necessário.
+  </div>
+</div>
+
+<!-- ===== PROTOTYPE: CÓDIGO ===== -->
+<div id="p-codigo" class="panel">
+  <div class="section-title">Prototype — código completo</div>
+  <div class="section-sub">A Pizza implementa uma interface Clonavel. Cada pizza sabe se copiar.</div>
+
+<div class="code-block"><span class="label">Java</span><span class="cm">// === INTERFACE PROTOTYPE ===</span>
+<span class="kw">interface</span> <span class="cl">Clonavel</span> {
+    <span class="cl">Clonavel</span> <span class="mt">clonar</span>();
+}
+
+<span class="cm">// === PRODUTO ===</span>
+<span class="kw">class</span> <span class="cl">PizzaPrototype</span> <span class="kw">implements</span> <span class="cl">Clonavel</span> {
+    <span class="kw">private</span> String tamanho;
+    <span class="kw">private</span> String massa;
+    <span class="kw">private</span> String molho;
+    <span class="kw">private</span> String queijo;
+    <span class="kw">private</span> String ingrediente;
+
+    <span class="kw">public</span> <span class="cl">PizzaPrototype</span>(String tamanho, String massa, String molho,
+                            String queijo, String ingrediente) {
+        <span class="kw">this</span>.tamanho     = tamanho;
+        <span class="kw">this</span>.massa       = massa;
+        <span class="kw">this</span>.molho       = molho;
+        <span class="kw">this</span>.queijo      = queijo;
+        <span class="kw">this</span>.ingrediente = ingrediente;
+    }
+
+    <span class="cm">// Construtor de cópia — usado pelo clonar()</span>
+    <span class="kw">private</span> <span class="cl">PizzaPrototype</span>(<span class="cl">PizzaPrototype</span> outra) {
+        <span class="kw">this</span>.tamanho     = outra.tamanho;
+        <span class="kw">this</span>.massa       = outra.massa;
+        <span class="kw">this</span>.molho       = outra.molho;
+        <span class="kw">this</span>.queijo      = outra.queijo;
+        <span class="kw">this</span>.ingrediente = outra.ingrediente;
+    }
+
+    <span class="an">@Override</span>
+    <span class="kw">public</span> <span class="cl">Clonavel</span> <span class="mt">clonar</span>() { <span class="kw">return new</span> <span class="cl">PizzaPrototype</span>(<span class="kw">this</span>); }
+
+    <span class="kw">public void</span> <span class="mt">setIngrediente</span>(String ingrediente) { <span class="kw">this</span>.ingrediente = ingrediente; }
+    <span class="kw">public void</span> <span class="mt">setTamanho</span>(String tamanho)         { <span class="kw">this</span>.tamanho = tamanho; }
+
+    <span class="kw">public void</span> <span class="mt">descrever</span>() {
+        System.out.println(<span class="st">"Pizza "</span> + tamanho + <span class="st">", "</span> + massa + <span class="st">", "</span>
+            + molho + <span class="st">", "</span> + queijo + <span class="st">", "</span> + ingrediente);
+    }
+}
+
+<span class="cm">// === REGISTRO DE PROTÓTIPOS (cardápio base) ===</span>
+<span class="kw">import</span> java.util.HashMap;
+<span class="kw">import</span> java.util.Map;
+
+<span class="kw">class</span> <span class="cl">CardapioPizzas</span> {
+    <span class="kw">private</span> Map&lt;String, <span class="cl">PizzaPrototype</span>&gt; cardapio = <span class="kw">new</span> HashMap&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="mt">registrar</span>(String nome, <span class="cl">PizzaPrototype</span> pizza) {
+        cardapio.put(nome, pizza);
+    }
+
+    <span class="kw">public</span> <span class="cl">PizzaPrototype</span> <span class="mt">obter</span>(String nome) {
+        <span class="kw">return</span> (<span class="cl">PizzaPrototype</span>) cardapio.get(nome).<span class="mt">clonar</span>(); <span class="cm">// sempre retorna CÓPIA</span>
+    }
+}
+
+<span class="cm">// === USO ===</span>
+<span class="cl">CardapioPizzas</span> cardapio = <span class="kw">new</span> <span class="cl">CardapioPizzas</span>();
+
+<span class="cm">// Registra os protótipos base uma vez só</span>
+cardapio.<span class="mt">registrar</span>(<span class="st">"calabresa"</span>,
+    <span class="kw">new</span> <span class="cl">PizzaPrototype</span>(<span class="st">"média"</span>, <span class="st">"fina"</span>, <span class="st">"clássico"</span>, <span class="st">"mussarela"</span>, <span class="st">"calabresa"</span>));
+
+cardapio.<span class="mt">registrar</span>(<span class="st">"frango"</span>,
+    <span class="kw">new</span> <span class="cl">PizzaPrototype</span>(<span class="st">"média"</span>, <span class="st">"fina"</span>, <span class="st">"branco"</span>, <span class="st">"mussarela"</span>, <span class="st">"frango"</span>));
+
+<span class="cm">// Pedido 1: calabresa normal</span>
+<span class="cl">PizzaPrototype</span> pedido1 = cardapio.<span class="mt">obter</span>(<span class="st">"calabresa"</span>);
+pedido1.<span class="mt">descrever</span>(); <span class="cm">// Pizza média, fina, clássico, mussarela, calabresa</span>
+
+<span class="cm">// Pedido 2: calabresa dupla (cópia + ajuste)</span>
+<span class="cl">PizzaPrototype</span> pedido2 = cardapio.<span class="mt">obter</span>(<span class="st">"calabresa"</span>);
+pedido2.<span class="mt">setTamanho</span>(<span class="st">"grande"</span>);
+pedido2.<span class="mt">setIngrediente</span>(<span class="st">"calabresa dupla"</span>);
+pedido2.<span class="mt">descrever</span>(); <span class="cm">// Pizza grande, fina, clássico, mussarela, calabresa dupla</span>
+
+<span class="cm">// O original não foi afetado</span>
+<span class="cl">PizzaPrototype</span> pedido3 = cardapio.<span class="mt">obter</span>(<span class="st">"calabresa"</span>);
+pedido3.<span class="mt">descrever</span>(); <span class="cm">// Pizza média, fina, clássico, mussarela, calabresa ← intacto</span>
+</div>
+
+  <div class="highlight-box">
+    <strong>O ponto central:</strong> o cardápio guarda os protótipos base. Cada pedido recebe uma <strong>cópia independente</strong>. Modificar o pedido nunca afeta o original — e você não precisa saber como a pizza é construída por dentro.
+  </div>
+</div>
+
+<!-- ===== COMPARAÇÃO FINAL ===== -->
+<div id="comparacao" class="panel">
+  <div class="section-title">Comparação final — os 4 padrões juntos</div>
+  <div class="section-sub">Agora que você viu todos, aqui está o mapa de decisão.</div>
+
+  <div class="big-comparison">
+    <div class="compare-card">
+      <h4>Factory Method</h4>
+      <p>A pizzaria decide qual pizza fazer. Você troca a pizzaria, troca o produto. Um único produto variável.</p>
+    </div>
+    <div class="compare-card">
+      <h4>Abstract Factory</h4>
+      <p>A pizzaria decide massa + molho + ingrediente juntos. Garante que nada mistura estilos diferentes.</p>
+    </div>
+    <div class="compare-card">
+      <h4>Builder</h4>
+      <p>O cliente monta a pizza passo a passo, escolhendo cada detalhe. O objeto só fica pronto no <code>build()</code>.</p>
+    </div>
+    <div class="compare-card">
+      <h4>Prototype</h4>
+      <p>A pizzaria tem pizzas base no cardápio. Cada pedido é uma cópia que pode ser ajustada sem alterar o original.</p>
+    </div>
+  </div>
+
+  <table class="diff-table">
+    <tr>
+      <th>Pergunta</th>
+      <th>Use este padrão</th>
+    </tr>
+    <tr>
+      <td>Qual subclasse deve criar este objeto?</td>
+      <td>Factory Method</td>
+    </tr>
+    <tr>
+      <td>Como garantir que objetos relacionados sejam compatíveis?</td>
+      <td>Abstract Factory</td>
+    </tr>
+    <tr>
+      <td>Como montar um objeto complexo com muitas opções de forma legível?</td>
+      <td>Builder</td>
+    </tr>
+    <tr>
+      <td>Como criar variações de um objeto que já existe sem reconfigurar tudo?</td>
+      <td>Prototype</td>
+    </tr>
+  </table>
+
+  <div class="highlight-box">
+    <strong>Onde você vai ver isso no mundo real:</strong><br><br>
+    Builder → <code>StringBuilder</code>, <code>HttpRequest.Builder</code>, configuração de clientes REST, montagem de queries SQL complexas.<br><br>
+    Prototype → caching de objetos pesados (conexões, configurações de relatório), sistemas de templates de documentos, jogos onde inimigos são variações de um modelo base.
+  </div>
+
+  <div class="warn-box">
+    <strong>Dica para entrevistas:</strong> quando perguntarem sobre padrões de criação, conecte cada um a um problema real do seu trabalho com Datasul ou ERP. "No sistema de integração, usamos algo parecido com Builder para montar as mensagens XML de NF-e" — isso vale muito mais do que decorar a definição do livro.
+  </div>
+</div>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>

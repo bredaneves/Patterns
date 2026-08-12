@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structural Patterns — Parte 2</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+  header { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 20px 24px; text-align: center; }
+  header h1 { font-size: 1.3rem; color: #e879f9; letter-spacing: 0.03em; }
+  header p  { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+
+  .tabs { display: flex; background: #1a1d27; border-bottom: 1px solid #2d3148; overflow-x: auto; }
+  .tab {
+    padding: 13px 16px; font-size: 0.81rem; font-weight: 600; cursor: pointer;
+    color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap;
+    transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .tab:hover { color: #f0abfc; }
+  .tab.active { color: #e879f9; border-bottom-color: #e879f9; }
+
+  .panel { display: none; padding: 24px; max-width: 920px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .section-sub   { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+
+  .prob  { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f59e0b; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .prob strong { color:#fbbf24; }
+  .hi    { background:#1e2030; border:1px solid #e879f944; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#f0abfc; line-height:1.75; }
+  .hi strong { color:#e879f9; }
+  .ok    { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #34d399; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .ok strong { color:#6ee7b7; }
+  .warn  { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f87171; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .warn strong { color:#fca5a5; }
+
+  .code-block {
+    background:#12141c; border:1px solid #2d3148; border-radius:8px;
+    padding:20px; font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:0.77rem; line-height:1.85; overflow-x:auto; margin-bottom:16px;
+    position:relative; white-space:pre;
+  }
+  .code-block .lbl { position:absolute; top:10px; right:14px; font-family:system-ui,sans-serif; font-size:0.68rem; color:#475569; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .kw { color:#c084fc; } .cl { color:#67e8f9; } .mt { color:#86efac; }
+  .st { color:#fde68a; } .cm { color:#475569; font-style:italic; } .an { color:#fb923c; }
+
+  .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:12px 0 20px; font-size:0.8rem; }
+  .fb  { background:#1e2030; border:1px solid #2d3148; border-radius:6px; padding:6px 12px; color:#e2e8f0; white-space:nowrap; }
+  .fhi { background:#2a1030; border:1px solid #e879f955; border-radius:6px; padding:6px 12px; color:#e879f9; font-weight:700; white-space:nowrap; }
+  .fa  { color:#4b5563; }
+
+  .diff-table { width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:20px; }
+  .diff-table th { background:#1e2030; color:#e879f9; padding:10px 14px; text-align:left; font-weight:700; border-bottom:2px solid #2d3148; }
+  .diff-table td { padding:10px 14px; border-bottom:1px solid #1e2030; color:#cbd5e1; vertical-align:top; }
+  .diff-table tr:nth-child(even) td { background:#12141c; }
+
+  h3 { font-size:0.85rem; color:#94a3b8; margin:20px 0 8px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+  @media(max-width:600px){ .grid2{ grid-template-columns:1fr; } }
+  .card { background:#1e2030; border:1px solid #2d3148; border-radius:10px; padding:16px; }
+  .card h4 { font-size:0.85rem; color:#e879f9; margin-bottom:8px; font-weight:700; }
+  .card p  { font-size:0.82rem; color:#94a3b8; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Structural Patterns — Parte 2</h1>
+  <p>Bridge · Composite · Decorator · Flyweight</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('intro')">Visão geral</button>
+  <button class="tab" onclick="show('bridge-cod')">Bridge</button>
+  <button class="tab" onclick="show('composite-cod')">Composite</button>
+  <button class="tab" onclick="show('decorator-cod')">Decorator</button>
+  <button class="tab" onclick="show('flyweight-cod')">Flyweight</button>
+  <button class="tab" onclick="show('comparacao')">Comparação final</button>
+</div>
+
+<!-- INTRO -->
+<div id="intro" class="panel active">
+  <div class="section-title">Os quatro restantes — cada um resolve um problema distinto</div>
+
+  <div class="prob">
+    <strong>Bridge</strong> — o problema é explosão de subclasses.<br>
+    Você tem duas dimensões que variam independentemente (ex: tipo de pizza + canal de entrega). Sem Bridge, cada combinação vira uma classe separada.<br><br>
+    <strong>Composite</strong> — o problema é hierarquia parte/todo.<br>
+    Você quer tratar um item individual e um grupo de itens da mesma forma (ex: ingrediente único vs combo de ingredientes).<br><br>
+    <strong>Decorator</strong> — o problema é adicionar comportamento sem herança.<br>
+    Você quer enriquecer um objeto com funcionalidades extras em tempo de execução, empilhando camadas.<br><br>
+    <strong>Flyweight</strong> — o problema é memória com muitos objetos similares.<br>
+    Você cria milhares de objetos que compartilham a maior parte do estado — Flyweight separa o que é compartilhável do que é único.
+  </div>
+
+  <div class="hi">
+    <strong>Dica de navegação:</strong> Decorator é o que mais aparece em entrevistas e no dia a dia (Spring, streams Java, I/O). Composite aparece bastante em sistemas de menu, árvores e relatórios. Bridge e Flyweight são mais avançados — aparecem em sistemas de alta escala.
+  </div>
+</div>
+
+<!-- BRIDGE -->
+<div id="bridge-cod" class="panel">
+  <div class="section-title">Bridge — separar abstração de implementação</div>
+  <div class="section-sub">A pizzaria quer oferecer pizzas (Margherita, Pepperoni) em diferentes canais (balcão, delivery, app). Sem Bridge: MargheritaBalcao, MargheritaDelivery, MargheritaApp, PepperoniBalcao... explode em classes.</div>
+
+  <div class="prob">
+    <strong>O problema sem Bridge:</strong> cada nova pizza exige 3 classes novas (uma por canal). Cada novo canal exige N classes novas (uma por pizza). Com 5 pizzas e 4 canais = 20 classes. Com Bridge = 5 + 4 = 9.
+  </div>
+
+  <h3>Estrutura</h3>
+  <div class="flow">
+    <div class="fb">Pizza (abstração)</div>
+    <div class="fa">→ tem uma →</div>
+    <div class="fhi">CanalEntrega (implementação)</div>
+  </div>
+  <div class="flow">
+    <div class="fb">Margherita / Pepperoni</div>
+    <div class="fa">variam independente de</div>
+    <div class="fb">Balcao / Delivery / App</div>
+  </div>
+
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// IMPLEMENTAÇÃO — canal de entrega (varia numa dimensão)</span>
+<span class="kw">interface</span> <span class="cl">CanalEntrega</span> {
+    <span class="kw">void</span> <span class="mt">entregar</span>(String pizza);
+}
+<span class="kw">class</span> <span class="cl">Balcao</span> <span class="kw">implements</span> <span class="cl">CanalEntrega</span> {
+    <span class="kw">public void</span> <span class="mt">entregar</span>(String pizza) {
+        System.out.println(<span class="st">"[Balcão] Entregando: "</span> + pizza);
+    }
+}
+<span class="kw">class</span> <span class="cl">Delivery</span> <span class="kw">implements</span> <span class="cl">CanalEntrega</span> {
+    <span class="kw">public void</span> <span class="mt">entregar</span>(String pizza) {
+        System.out.println(<span class="st">"[Delivery] Saindo para entrega: "</span> + pizza);
+    }
+}
+<span class="kw">class</span> <span class="cl">App</span> <span class="kw">implements</span> <span class="cl">CanalEntrega</span> {
+    <span class="kw">public void</span> <span class="mt">entregar</span>(String pizza) {
+        System.out.println(<span class="st">"[App] Notificando cliente: "</span> + pizza);
+    }
+}
+
+<span class="cm">// ABSTRAÇÃO — pizza (varia na outra dimensão)</span>
+<span class="cm">// A pizza TEM um canal — não herda dele</span>
+<span class="kw">abstract class</span> <span class="cl">Pizza</span> {
+    <span class="kw">protected</span> <span class="cl">CanalEntrega</span> canal; <span class="cm">// a "ponte"</span>
+
+    <span class="kw">public</span> <span class="cl">Pizza</span>(<span class="cl">CanalEntrega</span> canal) { <span class="kw">this</span>.canal = canal; }
+
+    <span class="kw">abstract void</span> <span class="mt">preparar</span>();
+}
+
+<span class="kw">class</span> <span class="cl">Margherita</span> <span class="kw">extends</span> <span class="cl">Pizza</span> {
+    <span class="kw">public</span> <span class="cl">Margherita</span>(<span class="cl">CanalEntrega</span> canal) { <span class="kw">super</span>(canal); }
+    <span class="kw">public void</span> <span class="mt">preparar</span>() { canal.<span class="mt">entregar</span>(<span class="st">"Margherita"</span>); }
+}
+
+<span class="kw">class</span> <span class="cl">Pepperoni</span> <span class="kw">extends</span> <span class="cl">Pizza</span> {
+    <span class="kw">public</span> <span class="cl">Pepperoni</span>(<span class="cl">CanalEntrega</span> canal) { <span class="kw">super</span>(canal); }
+    <span class="kw">public void</span> <span class="mt">preparar</span>() { canal.<span class="mt">entregar</span>(<span class="st">"Pepperoni"</span>); }
+}
+
+<span class="cm">// USO — combinações livres em tempo de execução</span>
+<span class="kw">new</span> <span class="cl">Margherita</span>(<span class="kw">new</span> <span class="cl">Balcao</span>()).<span class="mt">preparar</span>();   <span class="cm">// [Balcão] Entregando: Margherita</span>
+<span class="kw">new</span> <span class="cl">Margherita</span>(<span class="kw">new</span> <span class="cl">Delivery</span>()).<span class="mt">preparar</span>(); <span class="cm">// [Delivery] Saindo para entrega: Margherita</span>
+<span class="kw">new</span> <span class="cl">Pepperoni</span>(<span class="kw">new</span> <span class="cl">App</span>()).<span class="mt">preparar</span>();      <span class="cm">// [App] Notificando cliente: Pepperoni</span>
+</div>
+  <div class="ok">
+    <strong>A "ponte"</strong> é o atributo <code>canal</code> dentro de <code>Pizza</code>. Pizza e Canal evoluem independentemente — adicionar uma nova pizza ou um novo canal não afeta o outro lado.
+  </div>
+</div>
+
+<!-- COMPOSITE -->
+<div id="composite-cod" class="panel">
+  <div class="section-title">Composite — tratar item e grupo da mesma forma</div>
+  <div class="section-sub">A pizzaria quer calcular o preço de um pedido — que pode ser uma pizza avulsa, ou um combo (pizza + bebida + sobremesa), ou um super-combo (vários combos juntos). O código de cálculo deve ser o mesmo em todos os casos.</div>
+
+  <div class="prob">
+    <strong>O problema:</strong> sem Composite, você precisa saber se está lidando com um item simples ou um grupo antes de calcular. Com Composite, tudo implementa a mesma interface — o cálculo é idêntico independente de profundidade.
+  </div>
+
+  <h3>Estrutura</h3>
+  <div class="flow">
+    <div class="fb">ItemPedido (interface)</div>
+    <div class="fa">implementado por</div>
+    <div class="fb">PizzaItem (folha)</div>
+    <div class="fa">e por</div>
+    <div class="fhi">Combo (composto — contém outros ItemPedido)</div>
+  </div>
+
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// INTERFACE COMUM — item simples e grupo implementam a mesma</span>
+<span class="kw">interface</span> <span class="cl">ItemPedido</span> {
+    <span class="kw">double</span> <span class="mt">getPreco</span>();
+    <span class="kw">void</span>   <span class="mt">descrever</span>(String indent);
+}
+
+<span class="cm">// FOLHA — item simples, sem filhos</span>
+<span class="kw">class</span> <span class="cl">PizzaItem</span> <span class="kw">implements</span> <span class="cl">ItemPedido</span> {
+    <span class="kw">private</span> String nome;
+    <span class="kw">private double</span> preco;
+
+    <span class="kw">public</span> <span class="cl">PizzaItem</span>(String nome, <span class="kw">double</span> preco) {
+        <span class="kw">this</span>.nome = nome; <span class="kw">this</span>.preco = preco;
+    }
+    <span class="kw">public double</span> <span class="mt">getPreco</span>() { <span class="kw">return</span> preco; }
+    <span class="kw">public void</span>   <span class="mt">descrever</span>(String indent) {
+        System.out.println(indent + nome + <span class="st">" R$"</span> + preco);
+    }
+}
+
+<span class="cm">// COMPOSTO — pode conter outros ItemPedido (inclusive outros Combos)</span>
+<span class="kw">class</span> <span class="cl">Combo</span> <span class="kw">implements</span> <span class="cl">ItemPedido</span> {
+    <span class="kw">private</span> String nome;
+    <span class="kw">private</span> List&lt;<span class="cl">ItemPedido</span>&gt; itens = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+    <span class="kw">public</span> <span class="cl">Combo</span>(String nome) { <span class="kw">this</span>.nome = nome; }
+
+    <span class="kw">public void</span> <span class="mt">adicionar</span>(<span class="cl">ItemPedido</span> item) { itens.add(item); }
+
+    <span class="kw">public double</span> <span class="mt">getPreco</span>() {
+        <span class="kw">return</span> itens.stream().<span class="mt">mapToDouble</span>(<span class="cl">ItemPedido</span>::<span class="mt">getPreco</span>).sum();
+    }
+
+    <span class="kw">public void</span> <span class="mt">descrever</span>(String indent) {
+        System.out.println(indent + <span class="st">"[Combo] "</span> + nome + <span class="st">" R$"</span> + <span class="mt">getPreco</span>());
+        itens.<span class="mt">forEach</span>(i -&gt; i.<span class="mt">descrever</span>(indent + <span class="st">"  "</span>));
+    }
+}
+
+<span class="cm">// USO — estrutura em árvore</span>
+<span class="cl">PizzaItem</span> margherita = <span class="kw">new</span> <span class="cl">PizzaItem</span>(<span class="st">"Margherita"</span>, 45.0);
+<span class="cl">PizzaItem</span> refri      = <span class="kw">new</span> <span class="cl">PizzaItem</span>(<span class="st">"Refrigerante"</span>, 8.0);
+<span class="cl">PizzaItem</span> sobremesa  = <span class="kw">new</span> <span class="cl">PizzaItem</span>(<span class="st">"Tiramisu"</span>, 18.0);
+<span class="cl">PizzaItem</span> pepperoni  = <span class="kw">new</span> <span class="cl">PizzaItem</span>(<span class="st">"Pepperoni"</span>, 52.0);
+
+<span class="cl">Combo</span> comboBasico = <span class="kw">new</span> <span class="cl">Combo</span>(<span class="st">"Básico"</span>);
+comboBasico.<span class="mt">adicionar</span>(margherita);
+comboBasico.<span class="mt">adicionar</span>(refri);
+
+<span class="cl">Combo</span> comboFamilia = <span class="kw">new</span> <span class="cl">Combo</span>(<span class="st">"Família"</span>);
+comboFamilia.<span class="mt">adicionar</span>(comboBasico);  <span class="cm">// combo dentro de combo!</span>
+comboFamilia.<span class="mt">adicionar</span>(pepperoni);
+comboFamilia.<span class="mt">adicionar</span>(sobremesa);
+
+comboFamilia.<span class="mt">descrever</span>(<span class="st">""</span>);
+<span class="cm">// [Combo] Família R$123.0</span>
+<span class="cm">//   [Combo] Básico R$53.0</span>
+<span class="cm">//     Margherita R$45.0</span>
+<span class="cm">//     Refrigerante R$8.0</span>
+<span class="cm">//   Pepperoni R$52.0</span>
+<span class="cm">//   Tiramisu R$18.0</span>
+
+<span class="cm">// getPreco() funciona igual — não importa a profundidade</span>
+System.out.println(margherita.<span class="mt">getPreco</span>());   <span class="cm">// 45.0</span>
+System.out.println(comboFamilia.<span class="mt">getPreco</span>()); <span class="cm">// 123.0</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> estrutura de menus de sistema (item de menu vs sub-menu), hierarquia de departamentos em RH, árvore de categorias de produtos em ERP — qualquer estrutura parte/todo é candidata ao Composite.
+  </div>
+</div>
+
+<!-- DECORATOR -->
+<div id="decorator-cod" class="panel">
+  <div class="section-title">Decorator — adicionar comportamento em camadas</div>
+  <div class="section-sub">A pizzaria quer adicionar extras à pizza: borda recheada, queijo extra, molho especial. Cada extra adiciona preço e descrição. Qualquer combinação deve ser possível sem explodir em subclasses.</div>
+
+  <div class="prob">
+    <strong>Sem Decorator:</strong> PizzaComBorda, PizzaComQueijo, PizzaComBordaEQueijo, PizzaComMolho, PizzaComTudo... cada combinação vira uma classe. Com 4 extras = 16 combinações possíveis.<br><br>
+    <strong>Com Decorator:</strong> você empilha camadas em tempo de execução. Cada camada adiciona seu comportamento e delega o resto para a camada de baixo.
+  </div>
+
+  <h3>Estrutura em camadas</h3>
+  <div class="flow">
+    <div class="fhi">MolhoEspecial</div>
+    <div class="fa">envolve</div>
+    <div class="fhi">QueijoDuplo</div>
+    <div class="fa">envolve</div>
+    <div class="fhi">BordaRecheada</div>
+    <div class="fa">envolve</div>
+    <div class="fb">Pizza base</div>
+  </div>
+
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// INTERFACE BASE</span>
+<span class="kw">interface</span> <span class="cl">Pizza</span> {
+    String <span class="mt">getDescricao</span>();
+    <span class="kw">double</span> <span class="mt">getPreco</span>();
+}
+
+<span class="cm">// COMPONENTE CONCRETO — pizza base</span>
+<span class="kw">class</span> <span class="cl">PizzaMargherita</span> <span class="kw">implements</span> <span class="cl">Pizza</span> {
+    <span class="kw">public</span> String <span class="mt">getDescricao</span>() { <span class="kw">return</span> <span class="st">"Margherita"</span>; }
+    <span class="kw">public double</span> <span class="mt">getPreco</span>()     { <span class="kw">return</span> 40.0; }
+}
+
+<span class="cm">// DECORATOR BASE — implementa Pizza e tem uma Pizza dentro</span>
+<span class="kw">abstract class</span> <span class="cl">ExtraPizza</span> <span class="kw">implements</span> <span class="cl">Pizza</span> {
+    <span class="kw">protected</span> <span class="cl">Pizza</span> pizza; <span class="cm">// a pizza que está "debaixo"</span>
+    <span class="kw">public</span> <span class="cl">ExtraPizza</span>(<span class="cl">Pizza</span> pizza) { <span class="kw">this</span>.pizza = pizza; }
+}
+
+<span class="cm">// DECORATORS CONCRETOS — cada um adiciona algo e delega o resto</span>
+<span class="kw">class</span> <span class="cl">BordaRecheada</span> <span class="kw">extends</span> <span class="cl">ExtraPizza</span> {
+    <span class="kw">public</span> <span class="cl">BordaRecheada</span>(<span class="cl">Pizza</span> pizza) { <span class="kw">super</span>(pizza); }
+    <span class="kw">public</span> String <span class="mt">getDescricao</span>() { <span class="kw">return</span> pizza.<span class="mt">getDescricao</span>() + <span class="st">", borda recheada"</span>; }
+    <span class="kw">public double</span> <span class="mt">getPreco</span>()     { <span class="kw">return</span> pizza.<span class="mt">getPreco</span>() + 8.0; }
+}
+
+<span class="kw">class</span> <span class="cl">QueijoDuplo</span> <span class="kw">extends</span> <span class="cl">ExtraPizza</span> {
+    <span class="kw">public</span> <span class="cl">QueijoDuplo</span>(<span class="cl">Pizza</span> pizza) { <span class="kw">super</span>(pizza); }
+    <span class="kw">public</span> String <span class="mt">getDescricao</span>() { <span class="kw">return</span> pizza.<span class="mt">getDescricao</span>() + <span class="st">", queijo duplo"</span>; }
+    <span class="kw">public double</span> <span class="mt">getPreco</span>()     { <span class="kw">return</span> pizza.<span class="mt">getPreco</span>() + 6.0; }
+}
+
+<span class="kw">class</span> <span class="cl">MolhoEspecial</span> <span class="kw">extends</span> <span class="cl">ExtraPizza</span> {
+    <span class="kw">public</span> <span class="cl">MolhoEspecial</span>(<span class="cl">Pizza</span> pizza) { <span class="kw">super</span>(pizza); }
+    <span class="kw">public</span> String <span class="mt">getDescricao</span>() { <span class="kw">return</span> pizza.<span class="mt">getDescricao</span>() + <span class="st">", molho especial"</span>; }
+    <span class="kw">public double</span> <span class="mt">getPreco</span>()     { <span class="kw">return</span> pizza.<span class="mt">getPreco</span>() + 5.0; }
+}
+
+<span class="cm">// USO — empilha camadas livremente</span>
+<span class="cl">Pizza</span> p = <span class="kw">new</span> <span class="cl">PizzaMargherita</span>();
+System.out.println(p.<span class="mt">getDescricao</span>() + <span class="st">" R$"</span> + p.<span class="mt">getPreco</span>());
+<span class="cm">// Margherita R$40.0</span>
+
+p = <span class="kw">new</span> <span class="cl">BordaRecheada</span>(p);
+p = <span class="kw">new</span> <span class="cl">QueijoDuplo</span>(p);
+p = <span class="kw">new</span> <span class="cl">MolhoEspecial</span>(p);
+System.out.println(p.<span class="mt">getDescricao</span>() + <span class="st">" R$"</span> + p.<span class="mt">getPreco</span>());
+<span class="cm">// Margherita, borda recheada, queijo duplo, molho especial R$59.0</span>
+
+<span class="cm">// Outra combinação — sem nenhuma classe nova</span>
+<span class="cl">Pizza</span> p2 = <span class="kw">new</span> <span class="cl">QueijoDuplo</span>(<span class="kw">new</span> <span class="cl">QueijoDuplo</span>(<span class="kw">new</span> <span class="cl">PizzaMargherita</span>()));
+System.out.println(p2.<span class="mt">getDescricao</span>() + <span class="st">" R$"</span> + p2.<span class="mt">getPreco</span>());
+<span class="cm">// Margherita, queijo duplo, queijo duplo R$52.0  ← pode empilhar o mesmo!</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> <code>BufferedReader(new FileReader(...))</code> em Java é um Decorator clássico. No Spring, filtros de servlet são Decorators — cada filtro adiciona algo (autenticação, log, compressão) e repassa a requisição para o próximo.
+  </div>
+</div>
+
+<!-- FLYWEIGHT -->
+<div id="flyweight-cod" class="panel">
+  <div class="section-title">Flyweight — compartilhar estado para economizar memória</div>
+  <div class="section-sub">A pizzaria tem um sistema de rastreamento de entrega. Para cada pizza entregue, cria um objeto com: tipo da pizza, endereço de entrega e coordenadas GPS. Com 10.000 entregas por dia, o tipo da pizza se repete milhares de vezes.</div>
+
+  <div class="prob">
+    <strong>O problema:</strong> criar 10.000 objetos onde boa parte do estado é idêntica desperdiça memória. "Margherita" como string, seus ingredientes, sua descrição — são iguais em todos os pedidos de Margherita.<br><br>
+    <strong>Solução:</strong> separar o estado <strong>intrínseco</strong> (compartilhável: tipo, ingredientes) do estado <strong>extrínseco</strong> (único por instância: endereço, GPS). O intrínseco fica num objeto compartilhado — o Flyweight.
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>Estado intrínseco (Flyweight)</h4>
+      <p>Compartilhado entre todas as instâncias do mesmo tipo. Não muda. Ex: nome da pizza, ingredientes, preço base.</p>
+    </div>
+    <div class="card">
+      <h4>Estado extrínseco (contexto)</h4>
+      <p>Único por instância. Passado na chamada. Ex: endereço de entrega, horário do pedido, coordenadas GPS.</p>
+    </div>
+  </div>
+
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// FLYWEIGHT — estado intrínseco, compartilhado e imutável</span>
+<span class="kw">class</span> <span class="cl">TipoPizza</span> {
+    <span class="kw">private final</span> String nome;
+    <span class="kw">private final</span> String ingredientes;
+    <span class="kw">private final double</span> precoBase;
+
+    <span class="kw">public</span> <span class="cl">TipoPizza</span>(String nome, String ingredientes, <span class="kw">double</span> precoBase) {
+        <span class="kw">this</span>.nome = nome; <span class="kw">this</span>.ingredientes = ingredientes; <span class="kw">this</span>.precoBase = precoBase;
+    }
+
+    <span class="cm">// Recebe o estado extrínseco como parâmetro</span>
+    <span class="kw">void</span> <span class="mt">rastrear</span>(String endereco, String gps) {
+        System.out.println(<span class="st">"[Rastreio] "</span> + nome + <span class="st">" → "</span> + endereco + <span class="st">" ("</span> + gps + <span class="st">")"</span>);
+    }
+}
+
+<span class="cm">// FÁBRICA DO FLYWEIGHT — garante que o mesmo tipo nunca é criado duas vezes</span>
+<span class="kw">class</span> <span class="cl">TipoPizzaFactory</span> {
+    <span class="kw">private static</span> Map&lt;String, <span class="cl">TipoPizza</span>&gt; cache = <span class="kw">new</span> HashMap&lt;&gt;();
+
+    <span class="kw">public static</span> <span class="cl">TipoPizza</span> <span class="mt">obter</span>(String nome, String ingredientes, <span class="kw">double</span> preco) {
+        <span class="kw">if</span> (!cache.<span class="mt">containsKey</span>(nome)) {
+            System.out.println(<span class="st">"[Factory] Criando TipoPizza: "</span> + nome);
+            cache.<span class="mt">put</span>(nome, <span class="kw">new</span> <span class="cl">TipoPizza</span>(nome, ingredientes, preco));
+        }
+        <span class="kw">return</span> cache.<span class="mt">get</span>(nome); <span class="cm">// reutiliza o mesmo objeto</span>
+    }
+
+    <span class="kw">public static int</span> <span class="mt">totalCriados</span>() { <span class="kw">return</span> cache.<span class="mt">size</span>(); }
+}
+
+<span class="cm">// CONTEXTO — representa cada entrega individualmente</span>
+<span class="kw">class</span> <span class="cl">Entrega</span> {
+    <span class="kw">private</span> <span class="cl">TipoPizza</span> tipo;     <span class="cm">// referência ao flyweight</span>
+    <span class="kw">private</span> String endereco;     <span class="cm">// estado extrínseco</span>
+    <span class="kw">private</span> String gps;          <span class="cm">// estado extrínseco</span>
+
+    <span class="kw">public</span> <span class="cl">Entrega</span>(<span class="cl">TipoPizza</span> tipo, String endereco, String gps) {
+        <span class="kw">this</span>.tipo = tipo; <span class="kw">this</span>.endereco = endereco; <span class="kw">this</span>.gps = gps;
+    }
+
+    <span class="kw">void</span> <span class="mt">rastrear</span>() { tipo.<span class="mt">rastrear</span>(endereco, gps); }
+}
+
+<span class="cm">// USO — 5 entregas, só 2 TipoPizza criados na memória</span>
+List&lt;<span class="cl">Entrega</span>&gt; entregas = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+entregas.add(<span class="kw">new</span> <span class="cl">Entrega</span>(
+    <span class="cl">TipoPizzaFactory</span>.<span class="mt">obter</span>(<span class="st">"Margherita"</span>, <span class="st">"mussarela, manjericão"</span>, 40.0),
+    <span class="st">"Rua A, 100"</span>, <span class="st">"-23.5, -46.6"</span>));
+
+entregas.add(<span class="kw">new</span> <span class="cl">Entrega</span>(
+    <span class="cl">TipoPizzaFactory</span>.<span class="mt">obter</span>(<span class="st">"Pepperoni"</span>, <span class="st">"pepperoni, mussarela"</span>, 52.0),
+    <span class="st">"Rua B, 200"</span>, <span class="st">"-23.6, -46.7"</span>));
+
+entregas.add(<span class="kw">new</span> <span class="cl">Entrega</span>(
+    <span class="cl">TipoPizzaFactory</span>.<span class="mt">obter</span>(<span class="st">"Margherita"</span>, <span class="st">"mussarela, manjericão"</span>, 40.0),
+    <span class="st">"Rua C, 300"</span>, <span class="st">"-23.4, -46.5"</span>)); <span class="cm">// ← reutiliza Margherita</span>
+
+entregas.<span class="mt">forEach</span>(<span class="cl">Entrega</span>::<span class="mt">rastrear</span>);
+
+System.out.println(<span class="st">"TipoPizza criados: "</span> + <span class="cl">TipoPizzaFactory</span>.<span class="mt">totalCriados</span>());
+<span class="cm">// [Factory] Criando TipoPizza: Margherita</span>
+<span class="cm">// [Factory] Criando TipoPizza: Pepperoni</span>
+<span class="cm">// TipoPizza criados: 2  ← 3 entregas, apenas 2 objetos de tipo na memória</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> o pool de strings do Java (<code>String.intern()</code>) é Flyweight. Sistemas de jogos usam para representar milhares de árvores ou partículas com o mesmo modelo 3D compartilhado. Em ERP, metadados de campos de formulário são candidatos — o mesmo campo "CNPJ" existe em milhares de telas mas a definição é uma só.
+  </div>
+</div>
+
+<!-- COMPARAÇÃO FINAL -->
+<div id="comparacao" class="panel">
+  <div class="section-title">Comparação final — todos os 7 Structural Patterns</div>
+
+  <table class="diff-table">
+    <tr>
+      <th>Padrão</th>
+      <th>Problema que resolve</th>
+      <th>Analogia pizzaria</th>
+    </tr>
+    <tr>
+      <td><strong>Adapter</strong></td>
+      <td>Interfaces incompatíveis entre dois sistemas</td>
+      <td>Converte kg ↔ libras para falar com fornecedor italiano</td>
+    </tr>
+    <tr>
+      <td><strong>Bridge</strong></td>
+      <td>Explosão de subclasses com duas dimensões variáveis</td>
+      <td>Pizza (tipo) + Canal (entrega) variam independentes</td>
+    </tr>
+    <tr>
+      <td><strong>Composite</strong></td>
+      <td>Tratar item individual e grupo da mesma forma</td>
+      <td>Pizza avulsa e Combo calculam preço com a mesma interface</td>
+    </tr>
+    <tr>
+      <td><strong>Decorator</strong></td>
+      <td>Adicionar comportamento em camadas sem herança</td>
+      <td>Borda + queijo duplo + molho empilhados sobre a pizza base</td>
+    </tr>
+    <tr>
+      <td><strong>Facade</strong></td>
+      <td>Simplificar acesso a subsistemas complexos</td>
+      <td>Botão "abrir pizzaria" que aciona forno, estoque, caixa...</td>
+    </tr>
+    <tr>
+      <td><strong>Flyweight</strong></td>
+      <td>Economizar memória com muitos objetos similares</td>
+      <td>TipoPizza compartilhado entre milhares de entregas</td>
+    </tr>
+    <tr>
+      <td><strong>Proxy</strong></td>
+      <td>Controlar acesso a um objeto (cache, log, segurança)</td>
+      <td>Cache do cardápio do fornecedor premium</td>
+    </tr>
+  </table>
+
+  <div class="hi">
+    <strong>Como diferenciar Decorator de Composite:</strong><br>
+    Composite organiza objetos em árvore (parte/todo) — o foco é estrutura.<br>
+    Decorator empilha comportamento — o foco é enriquecer um único objeto.<br><br>
+    <strong>Como diferenciar Bridge de Adapter:</strong><br>
+    Adapter é remédio — resolve incompatibilidade que já existe.<br>
+    Bridge é prevenção — você projeta assim desde o início para evitar explosão de classes.
+  </div>
+
+  <div class="warn">
+    <strong>Os mais cobrados em entrevista, em ordem:</strong><br><br>
+    1. Decorator — aparece em qualquer discussão de Spring, I/O ou middleware.<br>
+    2. Adapter — qualquer integração com sistema externo ou legado.<br>
+    3. Facade — qualquer discussão de arquitetura em camadas.<br>
+    4. Proxy — qualquer discussão de cache, AOP ou segurança.<br>
+    5. Composite — hierarquias, menus, relatórios.<br>
+    6. Bridge — projetos com múltiplas dimensões de variação.<br>
+    7. Flyweight — sistemas de alta escala com muitos objetos.
+  </div>
+</div>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>

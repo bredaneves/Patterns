@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Behavioral Patterns — Parte 3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+  header { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 20px 24px; text-align: center; }
+  header h1 { font-size: 1.3rem; color: #a3e635; letter-spacing: 0.03em; }
+  header p  { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+  .tabs { display: flex; background: #1a1d27; border-bottom: 1px solid #2d3148; overflow-x: auto; }
+  .tab { padding: 13px 16px; font-size: 0.81rem; font-weight: 600; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab:hover { color: #d9f99d; }
+  .tab.active { color: #a3e635; border-bottom-color: #a3e635; }
+  .panel { display: none; padding: 24px; max-width: 920px; margin: 0 auto; }
+  .panel.active { display: block; }
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .section-sub { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+  .prob  { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f59e0b; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .prob strong { color:#fbbf24; }
+  .hi   { background:#1e2030; border:1px solid #a3e63544; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#d9f99d; line-height:1.75; }
+  .hi strong { color:#a3e635; }
+  .ok   { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #34d399; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .ok strong { color:#6ee7b7; }
+  .warn { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f87171; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .warn strong { color:#fca5a5; }
+  .code-block { background:#12141c; border:1px solid #2d3148; border-radius:8px; padding:20px; font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:0.77rem; line-height:1.85; overflow-x:auto; margin-bottom:16px; position:relative; white-space:pre; }
+  .code-block .lbl { position:absolute; top:10px; right:14px; font-family:system-ui,sans-serif; font-size:0.68rem; color:#475569; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .kw{color:#c084fc;} .cl{color:#67e8f9;} .mt{color:#86efac;} .st{color:#fde68a;} .cm{color:#475569;font-style:italic;}
+  .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:12px 0 20px; font-size:0.8rem; }
+  .fb  { background:#1e2030; border:1px solid #2d3148; border-radius:6px; padding:6px 12px; color:#e2e8f0; white-space:nowrap; }
+  .fhi { background:#141f0a; border:1px solid #a3e63555; border-radius:6px; padding:6px 12px; color:#a3e635; font-weight:700; white-space:nowrap; }
+  .fa  { color:#4b5563; }
+  .diff-table { width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:20px; }
+  .diff-table th { background:#1e2030; color:#a3e635; padding:10px 14px; text-align:left; font-weight:700; border-bottom:2px solid #2d3148; }
+  .diff-table td { padding:10px 14px; border-bottom:1px solid #1e2030; color:#cbd5e1; vertical-align:top; }
+  .diff-table tr:nth-child(even) td { background:#12141c; }
+  h3 { font-size:0.85rem; color:#94a3b8; margin:20px 0 8px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Behavioral Patterns — Parte 3</h1>
+  <p>Iterator · Memento · Template Method · Visitor</p>
+</header>
+<div class="tabs">
+  <button class="tab active" onclick="show('intro')">Visão geral</button>
+  <button class="tab" onclick="show('iterator-prob')">Iterator — problema</button>
+  <button class="tab" onclick="show('iterator-cod')">Iterator — código</button>
+  <button class="tab" onclick="show('memento-prob')">Memento — problema</button>
+  <button class="tab" onclick="show('memento-cod')">Memento — código</button>
+  <button class="tab" onclick="show('template-prob')">Template Method — problema</button>
+  <button class="tab" onclick="show('template-cod')">Template Method — código</button>
+  <button class="tab" onclick="show('visitor-prob')">Visitor — problema</button>
+  <button class="tab" onclick="show('visitor-cod')">Visitor — código</button>
+  <button class="tab" onclick="show('comparacao')">Comparação final</button>
+</div>
+
+<!-- INTRO -->
+<div id="intro" class="panel active">
+  <div class="section-title">Os quatro últimos — cada um com problema bem distinto</div>
+  <div class="section-sub">Diferente dos grupos anteriores, esses quatro raramente se confundem entre si — cada um resolve um problema bastante específico.</div>
+  <div class="prob">
+    <strong>Iterator</strong> — percorrer uma coleção sem expor sua estrutura interna.<br>
+    "Quero varrer o cardápio sem saber se ele é uma lista, árvore ou array."<br><br>
+    <strong>Memento</strong> — salvar e restaurar o estado de um objeto sem violar seu encapsulamento.<br>
+    "Quero desfazer as alterações do pedido voltando ao estado anterior."<br><br>
+    <strong>Template Method</strong> — definir o esqueleto de um algoritmo, deixando etapas específicas para subclasses.<br>
+    "Toda pizza segue os mesmos passos de preparo, mas cada tipo tem sua variação."<br><br>
+    <strong>Visitor</strong> — adicionar operações a objetos sem modificar suas classes.<br>
+    "Quero calcular imposto, gerar relatório e exportar XML do pedido — sem tocar na classe Pedido."
+  </div>
+  <div class="hi">
+    <strong>Template Method</strong> é o mais cobrado em entrevistas desse grupo — aparece em frameworks, ETLs e processamento em lote. <strong>Visitor</strong> é o mais avançado e o menos intuitivo — vale atenção especial.
+  </div>
+</div>
+
+<!-- ITERATOR PROBLEMA -->
+<div id="iterator-prob" class="panel">
+  <div class="section-title">Iterator — o problema</div>
+  <div class="section-sub">A pizzaria tem um cardápio que internamente pode ser uma lista, um array ou até uma árvore de categorias. O garçom precisa percorrer todos os itens para ler para o cliente — sem precisar saber como o cardápio está organizado por dentro.</div>
+  <div class="prob">
+    <strong>Sem Iterator:</strong> o garçom precisa saber a estrutura interna do cardápio para percorrê-lo:<br><br>
+    <code>for (int i = 0; i &lt; cardapio.tamanho(); i++) { cardapio.getItem(i); }</code><br><br>
+    Se o cardápio mudar de lista para árvore, o código do garçom quebra. Ele está acoplado à estrutura interna.
+  </div>
+  <div class="hi">
+    <strong>Com Iterator:</strong> o cardápio fornece um iterador com <code>hasNext()</code> e <code>next()</code>. O garçom usa só esses dois métodos — não sabe e não precisa saber como os itens estão armazenados.
+  </div>
+  <div class="ok">
+    <strong>Contexto Java:</strong> esse padrão já está incorporado na linguagem. Toda coleção que implementa <code>Iterable</code> fornece um <code>Iterator</code> — é exatamente o que o <code>for-each</code> usa internamente. Você já usa Iterator todo dia sem perceber.
+  </div>
+</div>
+
+<!-- ITERATOR CÓDIGO -->
+<div id="iterator-cod" class="panel">
+  <div class="section-title">Iterator — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// INTERFACE ITERATOR</span>
+<span class="kw">interface</span> <span class="cl">IteradorCardapio</span> {
+    <span class="kw">boolean</span> <span class="mt">hasNext</span>();
+    String  <span class="mt">next</span>();
+}
+
+<span class="cm">// INTERFACE COLEÇÃO — fornece o iterador</span>
+<span class="kw">interface</span> <span class="cl">Cardapio</span> {
+    <span class="cl">IteradorCardapio</span> <span class="mt">criarIterador</span>();
+}
+
+<span class="cm">// COLEÇÃO CONCRETA — internamente usa array</span>
+<span class="kw">class</span> <span class="cl">CardapioArray</span> <span class="kw">implements</span> <span class="cl">Cardapio</span> {
+    <span class="kw">private</span> String[] itens;
+    <span class="kw">private int</span> tamanho = 0;
+
+    <span class="kw">public</span> <span class="cl">CardapioArray</span>(<span class="kw">int</span> capacidade) { itens = <span class="kw">new</span> String[capacidade]; }
+
+    <span class="kw">public void</span> <span class="mt">adicionar</span>(String item) { itens[tamanho++] = item; }
+
+    <span class="kw">public</span> <span class="cl">IteradorCardapio</span> <span class="mt">criarIterador</span>() {
+        <span class="kw">return new</span> <span class="cl">IteradorArray</span>(itens, tamanho);
+    }
+}
+
+<span class="cm">// ITERATOR CONCRETO — sabe como percorrer o array</span>
+<span class="kw">class</span> <span class="cl">IteradorArray</span> <span class="kw">implements</span> <span class="cl">IteradorCardapio</span> {
+    <span class="kw">private</span> String[] itens;
+    <span class="kw">private int</span> tamanho;
+    <span class="kw">private int</span> posicao = 0;
+
+    <span class="kw">public</span> <span class="cl">IteradorArray</span>(String[] itens, <span class="kw">int</span> tamanho) {
+        <span class="kw">this</span>.itens = itens; <span class="kw">this</span>.tamanho = tamanho;
+    }
+    <span class="kw">public boolean</span> <span class="mt">hasNext</span>() { <span class="kw">return</span> posicao < tamanho; }
+    <span class="kw">public</span> String  <span class="mt">next</span>()    { <span class="kw">return</span> itens[posicao++]; }
+}
+
+<span class="cm">// OUTRA COLEÇÃO — internamente usa List (estrutura diferente)</span>
+<span class="kw">class</span> <span class="cl">CardapioLista</span> <span class="kw">implements</span> <span class="cl">Cardapio</span> {
+    <span class="kw">private</span> List&lt;String&gt; itens = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="mt">adicionar</span>(String item) { itens.add(item); }
+
+    <span class="kw">public</span> <span class="cl">IteradorCardapio</span> <span class="mt">criarIterador</span>() {
+        <span class="kw">return new</span> <span class="cl">IteradorLista</span>(itens);
+    }
+}
+
+<span class="kw">class</span> <span class="cl">IteradorLista</span> <span class="kw">implements</span> <span class="cl">IteradorCardapio</span> {
+    <span class="kw">private</span> Iterator&lt;String&gt; it;
+    <span class="kw">public</span> <span class="cl">IteradorLista</span>(List&lt;String&gt; itens) { it = itens.iterator(); }
+    <span class="kw">public boolean</span> <span class="mt">hasNext</span>() { <span class="kw">return</span> it.<span class="mt">hasNext</span>(); }
+    <span class="kw">public</span> String  <span class="mt">next</span>()    { <span class="kw">return</span> it.<span class="mt">next</span>(); }
+}
+
+<span class="cm">// GARÇOM — usa sempre a mesma interface, não sabe a estrutura interna</span>
+<span class="kw">class</span> <span class="cl">Garcom</span> {
+    <span class="kw">void</span> <span class="mt">lerCardapio</span>(<span class="cl">Cardapio</span> cardapio) {
+        <span class="cl">IteradorCardapio</span> it = cardapio.<span class="mt">criarIterador</span>();
+        System.out.println(<span class="st">"--- Cardápio ---"</span>);
+        <span class="kw">while</span> (it.<span class="mt">hasNext</span>()) {
+            System.out.println(<span class="st">"  "</span> + it.<span class="mt">next</span>());
+        }
+    }
+}
+
+<span class="cm">// USO — o garçom usa o mesmo código para estruturas diferentes</span>
+<span class="cl">CardapioArray</span> c1 = <span class="kw">new</span> <span class="cl">CardapioArray</span>(5);
+c1.<span class="mt">adicionar</span>(<span class="st">"Margherita"</span>); c1.<span class="mt">adicionar</span>(<span class="st">"Pepperoni"</span>); c1.<span class="mt">adicionar</span>(<span class="st">"Calabresa"</span>);
+
+<span class="cl">CardapioLista</span> c2 = <span class="kw">new</span> <span class="cl">CardapioLista</span>();
+c2.<span class="mt">adicionar</span>(<span class="st">"Frango"</span>); c2.<span class="mt">adicionar</span>(<span class="st">"Vegetariana"</span>);
+
+<span class="cl">Garcom</span> garcom = <span class="kw">new</span> <span class="cl">Garcom</span>();
+garcom.<span class="mt">lerCardapio</span>(c1); <span class="cm">// percorre array</span>
+garcom.<span class="mt">lerCardapio</span>(c2); <span class="cm">// percorre lista — mesmo código</span>
+</div>
+  <div class="ok">
+    <strong>Na prática em Java:</strong> você raramente implementa Iterator do zero — usa as coleções do Java que já implementam o padrão. O valor de estudar a implementação manual é entender por que o <code>for-each</code> funciona em qualquer coleção e como criar coleções customizadas percorríveis.
+  </div>
+</div>
+
+<!-- MEMENTO PROBLEMA -->
+<div id="memento-prob" class="panel">
+  <div class="section-title">Memento — o problema</div>
+  <div class="section-sub">O atendente está montando um pedido personalizado com o cliente. O cliente muda de ideia várias vezes e quer desfazer as últimas alterações. O sistema precisa restaurar estados anteriores sem expor os detalhes internos do pedido.</div>
+  <div class="prob">
+    <strong>Sem Memento:</strong> para salvar o estado, você expõe todos os atributos internos do objeto — getters para cada campo — e os armazena fora. Isso quebra o encapsulamento: quem salva precisa conhecer a estrutura interna do objeto.<br><br>
+    E se o objeto tiver campos privados que não devem ser acessados externamente?
+  </div>
+  <div class="hi">
+    <strong>Com Memento:</strong> o próprio objeto cria um "instantâneo" de si mesmo (o Memento) que guarda seu estado interno. Quem armazena o Memento não consegue ler nem modificar o que está dentro — só devolve para o objeto quando precisar restaurar.
+  </div>
+  <div class="prob">
+    <strong>Diferença do Command:</strong> Command armazena a <em>ação</em> para desfazê-la executando a operação inversa. Memento armazena o <em>estado completo</em> do objeto — não precisa saber qual operação foi feita, só restaura o snapshot.
+  </div>
+</div>
+
+<!-- MEMENTO CÓDIGO -->
+<div id="memento-cod" class="panel">
+  <div class="section-title">Memento — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// MEMENTO — guarda o estado, não expõe nada</span>
+<span class="kw">class</span> <span class="cl">PedidoMemento</span> {
+    <span class="kw">private final</span> String pizza;
+    <span class="kw">private final</span> String tamanho;
+    <span class="kw">private final double</span> valor;
+
+    <span class="cm">// Construtor de pacote — só Pedido pode criar</span>
+    <span class="cl">PedidoMemento</span>(String pizza, String tamanho, <span class="kw">double</span> valor) {
+        <span class="kw">this</span>.pizza   = pizza;
+        <span class="kw">this</span>.tamanho = tamanho;
+        <span class="kw">this</span>.valor   = valor;
+    }
+
+    <span class="cm">// Getters de pacote — só Pedido pode ler</span>
+    String getPizza()   { <span class="kw">return</span> pizza; }
+    String getTamanho() { <span class="kw">return</span> tamanho; }
+    <span class="kw">double</span> getValor()   { <span class="kw">return</span> valor; }
+}
+
+<span class="cm">// ORIGINATOR — o objeto que sabe criar e restaurar seu próprio snapshot</span>
+<span class="kw">class</span> <span class="cl">Pedido</span> {
+    <span class="kw">private</span> String pizza;
+    <span class="kw">private</span> String tamanho;
+    <span class="kw">private double</span> valor;
+
+    <span class="kw">public void</span> <span class="mt">configurar</span>(String pizza, String tamanho, <span class="kw">double</span> valor) {
+        <span class="kw">this</span>.pizza   = pizza;
+        <span class="kw">this</span>.tamanho = tamanho;
+        <span class="kw">this</span>.valor   = valor;
+    }
+
+    <span class="cm">// Cria o snapshot — sem expor atributos privados</span>
+    <span class="kw">public</span> <span class="cl">PedidoMemento</span> <span class="mt">salvar</span>() {
+        <span class="kw">return new</span> <span class="cl">PedidoMemento</span>(pizza, tamanho, valor);
+    }
+
+    <span class="cm">// Restaura a partir do snapshot</span>
+    <span class="kw">public void</span> <span class="mt">restaurar</span>(<span class="cl">PedidoMemento</span> m) {
+        <span class="kw">this</span>.pizza   = m.<span class="mt">getPizza</span>();
+        <span class="kw">this</span>.tamanho = m.<span class="mt">getTamanho</span>();
+        <span class="kw">this</span>.valor   = m.<span class="mt">getValor</span>();
+    }
+
+    <span class="kw">public void</span> <span class="mt">mostrar</span>() {
+        System.out.println(<span class="st">"Pedido: "</span> + pizza + <span class="st">" ("</span> + tamanho + <span class="st">") R$"</span> + valor);
+    }
+}
+
+<span class="cm">// CARETAKER — armazena os mementos, não sabe o que está dentro</span>
+<span class="kw">class</span> <span class="cl">HistoricoPedido</span> {
+    <span class="kw">private</span> Deque&lt;<span class="cl">PedidoMemento</span>&gt; historico = <span class="kw">new</span> ArrayDeque&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="mt">salvar</span>(<span class="cl">PedidoMemento</span> m) { historico.<span class="mt">push</span>(m); }
+
+    <span class="kw">public</span> <span class="cl">PedidoMemento</span> <span class="mt">desfazer</span>() {
+        <span class="kw">return</span> historico.<span class="mt">isEmpty</span>() ? <span class="kw">null</span> : historico.<span class="mt">pop</span>();
+    }
+}
+
+<span class="cm">// USO</span>
+<span class="cl">Pedido</span>          pedido    = <span class="kw">new</span> <span class="cl">Pedido</span>();
+<span class="cl">HistoricoPedido</span> historico = <span class="kw">new</span> <span class="cl">HistoricoPedido</span>();
+
+pedido.<span class="mt">configurar</span>(<span class="st">"Margherita"</span>, <span class="st">"média"</span>, 40.0);
+historico.<span class="mt">salvar</span>(pedido.<span class="mt">salvar</span>()); <span class="cm">// snapshot 1</span>
+pedido.<span class="mt">mostrar</span>(); <span class="cm">// Pedido: Margherita (média) R$40.0</span>
+
+pedido.<span class="mt">configurar</span>(<span class="st">"Pepperoni"</span>, <span class="st">"grande"</span>, 55.0);
+historico.<span class="mt">salvar</span>(pedido.<span class="mt">salvar</span>()); <span class="cm">// snapshot 2</span>
+pedido.<span class="mt">mostrar</span>(); <span class="cm">// Pedido: Pepperoni (grande) R$55.0</span>
+
+pedido.<span class="mt">configurar</span>(<span class="st">"Calabresa"</span>, <span class="st">"família"</span>, 70.0);
+pedido.<span class="mt">mostrar</span>(); <span class="cm">// Pedido: Calabresa (família) R$70.0</span>
+
+<span class="cm">// Cliente se arrependeu — desfaz</span>
+pedido.<span class="mt">restaurar</span>(historico.<span class="mt">desfazer</span>());
+pedido.<span class="mt">mostrar</span>(); <span class="cm">// Pedido: Pepperoni (grande) R$55.0</span>
+
+pedido.<span class="mt">restaurar</span>(historico.<span class="mt">desfazer</span>());
+pedido.<span class="mt">mostrar</span>(); <span class="cm">// Pedido: Margherita (média) R$40.0</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já veu isso:</strong> editores de texto com histórico de desfazer, ferramentas de design com Ctrl+Z, jogos com sistema de save/load. Em ERP, o conceito de "rascunho de nota fiscal" que pode ser restaurado para um estado anterior segue essa lógica.
+  </div>
+</div>
+
+<!-- TEMPLATE METHOD PROBLEMA -->
+<div id="template-prob" class="panel">
+  <div class="section-title">Template Method — o problema</div>
+  <div class="section-sub">Toda pizza passa pelos mesmos passos de preparo: preparar a massa, adicionar o molho, adicionar os ingredientes e assar. Mas cada tipo de pizza faz cada etapa de forma diferente. Como evitar duplicar a sequência em cada classe?</div>
+  <div class="prob">
+    <strong>Sem Template Method:</strong> cada tipo de pizza implementa o processo completo do zero. A sequência de passos fica duplicada em cada classe — e se a ordem mudar, você precisa atualizar todas.
+  </div>
+  <div class="hi">
+    <strong>Com Template Method:</strong> a classe base define a sequência (o "template") num método final. As subclasses só implementam as etapas variáveis — não podem mudar a ordem, só o conteúdo de cada passo.
+  </div>
+  <div class="prob">
+    <strong>Diferença do Strategy:</strong> Strategy troca o algoritmo inteiro substituindo o objeto. Template Method mantém o esqueleto fixo na superclasse e só permite variar etapas específicas via herança. Strategy usa composição; Template Method usa herança.
+  </div>
+</div>
+
+<!-- TEMPLATE METHOD CÓDIGO -->
+<div id="template-cod" class="panel">
+  <div class="section-title">Template Method — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// CLASSE BASE — define o template (sequência fixa)</span>
+<span class="kw">abstract class</span> <span class="cl">ReceitaPizza</span> {
+
+    <span class="cm">// O TEMPLATE METHOD — final para ninguém mudar a ordem</span>
+    <span class="kw">public final void</span> <span class="mt">preparar</span>() {
+        <span class="mt">prepararMassa</span>();
+        <span class="mt">adicionarMolho</span>();
+        <span class="mt">adicionarIngredientes</span>();
+        <span class="mt">assar</span>();
+        <span class="mt">finalizar</span>(); <span class="cm">// hook — opcional, tem implementação padrão</span>
+    }
+
+    <span class="cm">// Etapas obrigatórias — subclasses devem implementar</span>
+    <span class="kw">protected abstract void</span> <span class="mt">prepararMassa</span>();
+    <span class="kw">protected abstract void</span> <span class="mt">adicionarMolho</span>();
+    <span class="kw">protected abstract void</span> <span class="mt">adicionarIngredientes</span>();
+
+    <span class="cm">// Etapa comum — igual para todas</span>
+    <span class="kw">protected void</span> <span class="mt">assar</span>() {
+        System.out.println(<span class="st">"Assando por 12 minutos a 280°C"</span>);
+    }
+
+    <span class="cm">// Hook — subclasse pode sobrescrever ou não</span>
+    <span class="kw">protected void</span> <span class="mt">finalizar</span>() {
+        System.out.println(<span class="st">"Pizza pronta!"</span>);
+    }
+}
+
+<span class="cm">// SUBCLASSE 1 — implementa só as etapas variáveis</span>
+<span class="kw">class</span> <span class="cl">PizzaMargherita</span> <span class="kw">extends</span> <span class="cl">ReceitaPizza</span> {
+    <span class="kw">protected void</span> <span class="mt">prepararMassa</span>()       { System.out.println(<span class="st">"Massa fina napolitana"</span>); }
+    <span class="kw">protected void</span> <span class="mt">adicionarMolho</span>()      { System.out.println(<span class="st">"Molho de tomate suave"</span>); }
+    <span class="kw">protected void</span> <span class="mt">adicionarIngredientes</span>() { System.out.println(<span class="st">"Mussarela fresca e manjericão"</span>); }
+}
+
+<span class="cm">// SUBCLASSE 2 — diferente em cada etapa, e sobrescreve o hook</span>
+<span class="kw">class</span> <span class="cl">PizzaPepperoni</span> <span class="kw">extends</span> <span class="cl">ReceitaPizza</span> {
+    <span class="kw">protected void</span> <span class="mt">prepararMassa</span>()       { System.out.println(<span class="st">"Massa grossa americana"</span>); }
+    <span class="kw">protected void</span> <span class="mt">adicionarMolho</span>()      { System.out.println(<span class="st">"Molho picante"</span>); }
+    <span class="kw">protected void</span> <span class="mt">adicionarIngredientes</span>() { System.out.println(<span class="st">"Pepperoni e cheddar"</span>); }
+
+    <span class="cm">// Sobrescreve o hook para adicionar etapa extra</span>
+    <span class="kw">protected void</span> <span class="mt">finalizar</span>() {
+        System.out.println(<span class="st">"Adicionando orégano por cima."</span>);
+        <span class="kw">super</span>.<span class="mt">finalizar</span>();
+    }
+}
+
+<span class="cm">// USO — a sequência é sempre a mesma, o conteúdo varia</span>
+System.out.println(<span class="st">"=== Margherita ==="</span>);
+<span class="kw">new</span> <span class="cl">PizzaMargherita</span>().<span class="mt">preparar</span>();
+<span class="cm">// Massa fina napolitana</span>
+<span class="cm">// Molho de tomate suave</span>
+<span class="cm">// Mussarela fresca e manjericão</span>
+<span class="cm">// Assando por 12 minutos a 280°C</span>
+<span class="cm">// Pizza pronta!</span>
+
+System.out.println(<span class="st">"=== Pepperoni ==="</span>);
+<span class="kw">new</span> <span class="cl">PizzaPepperoni</span>().<span class="mt">preparar</span>();
+<span class="cm">// Massa grossa americana</span>
+<span class="cm">// Molho picante</span>
+<span class="cm">// Pepperoni e cheddar</span>
+<span class="cm">// Assando por 12 minutos a 280°C</span>
+<span class="cm">// Adicionando orégano por cima.</span>
+<span class="cm">// Pizza pronta!</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> frameworks de teste como JUnit usam Template Method — <code>setUp()</code>, o teste em si e <code>tearDown()</code> seguem uma sequência fixa. Processos de importação em ERP (validar → transformar → persistir → notificar) são Template Method clássico. No Spring Batch, o <code>ItemReader → ItemProcessor → ItemWriter</code> segue esse esqueleto.
+  </div>
+</div>
+
+<!-- VISITOR PROBLEMA -->
+<div id="visitor-prob" class="panel">
+  <div class="section-title">Visitor — o problema</div>
+  <div class="section-sub">A pizzaria tem diferentes tipos de itens no pedido: pizzas, bebidas e sobremesas. O sistema precisa fazer várias operações sobre esses itens — calcular imposto, gerar relatório, exportar para XML. Mas não quer adicionar esses métodos nas classes de item a cada nova necessidade.</div>
+  <div class="prob">
+    <strong>Sem Visitor:</strong> cada nova operação (calcular imposto, exportar, auditoria) exige abrir todas as classes de item e adicionar um método novo. Com o tempo as classes Pizza, Bebida e Sobremesa ficam cheias de responsabilidades que não são delas.
+  </div>
+  <div class="hi">
+    <strong>Com Visitor:</strong> cada operação vira um Visitor separado. Os itens do pedido só precisam de um método <code>aceitar(visitor)</code> — o visitor é quem carrega a lógica. Adicionar uma nova operação = criar um novo Visitor, sem tocar nas classes existentes.
+  </div>
+  <div class="prob">
+    <strong>O truque do double dispatch:</strong> quando você chama <code>item.aceitar(visitor)</code>, o item chama de volta <code>visitor.visitar(this)</code>. Isso garante que a versão correta do <code>visitar()</code> seja chamada para cada tipo de item — sem if/instanceof.
+  </div>
+</div>
+
+<!-- VISITOR CÓDIGO -->
+<div id="visitor-cod" class="panel">
+  <div class="section-title">Visitor — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// INTERFACE VISITOR — uma operação para cada tipo de elemento</span>
+<span class="kw">interface</span> <span class="cl">Visitor</span> {
+    <span class="kw">void</span> <span class="mt">visitar</span>(<span class="cl">Pizza</span>     pizza);
+    <span class="kw">void</span> <span class="mt">visitar</span>(<span class="cl">Bebida</span>    bebida);
+    <span class="kw">void</span> <span class="mt">visitar</span>(<span class="cl">Sobremesa</span> sobremesa);
+}
+
+<span class="cm">// INTERFACE ELEMENTO — aceita qualquer visitor</span>
+<span class="kw">interface</span> <span class="cl">ItemPedido</span> {
+    <span class="kw">void</span> <span class="mt">aceitar</span>(<span class="cl">Visitor</span> visitor);
+    String <span class="mt">getNome</span>();
+    <span class="kw">double</span> <span class="mt">getPreco</span>();
+}
+
+<span class="cm">// ELEMENTOS CONCRETOS — só sabem se aceitar e se identificar</span>
+<span class="kw">class</span> <span class="cl">Pizza</span> <span class="kw">implements</span> <span class="cl">ItemPedido</span> {
+    <span class="kw">private</span> String nome; <span class="kw">private double</span> preco;
+    <span class="kw">public</span> <span class="cl">Pizza</span>(String nome, <span class="kw">double</span> preco) { <span class="kw">this</span>.nome=nome; <span class="kw">this</span>.preco=preco; }
+    <span class="kw">public</span> String <span class="mt">getNome</span>()  { <span class="kw">return</span> nome; }
+    <span class="kw">public double</span> <span class="mt">getPreco</span>() { <span class="kw">return</span> preco; }
+    <span class="kw">public void</span> <span class="mt">aceitar</span>(<span class="cl">Visitor</span> v) { v.<span class="mt">visitar</span>(<span class="kw">this</span>); } <span class="cm">// double dispatch</span>
+}
+
+<span class="kw">class</span> <span class="cl">Bebida</span> <span class="kw">implements</span> <span class="cl">ItemPedido</span> {
+    <span class="kw">private</span> String nome; <span class="kw">private double</span> preco;
+    <span class="kw">public</span> <span class="cl">Bebida</span>(String nome, <span class="kw">double</span> preco) { <span class="kw">this</span>.nome=nome; <span class="kw">this</span>.preco=preco; }
+    <span class="kw">public</span> String <span class="mt">getNome</span>()  { <span class="kw">return</span> nome; }
+    <span class="kw">public double</span> <span class="mt">getPreco</span>() { <span class="kw">return</span> preco; }
+    <span class="kw">public void</span> <span class="mt">aceitar</span>(<span class="cl">Visitor</span> v) { v.<span class="mt">visitar</span>(<span class="kw">this</span>); }
+}
+
+<span class="kw">class</span> <span class="cl">Sobremesa</span> <span class="kw">implements</span> <span class="cl">ItemPedido</span> {
+    <span class="kw">private</span> String nome; <span class="kw">private double</span> preco;
+    <span class="kw">public</span> <span class="cl">Sobremesa</span>(String nome, <span class="kw">double</span> preco) { <span class="kw">this</span>.nome=nome; <span class="kw">this</span>.preco=preco; }
+    <span class="kw">public</span> String <span class="mt">getNome</span>()  { <span class="kw">return</span> nome; }
+    <span class="kw">public double</span> <span class="mt">getPreco</span>() { <span class="kw">return</span> preco; }
+    <span class="kw">public void</span> <span class="mt">aceitar</span>(<span class="cl">Visitor</span> v) { v.<span class="mt">visitar</span>(<span class="kw">this</span>); }
+}
+
+<span class="cm">// VISITOR 1 — calcula imposto por tipo de item</span>
+<span class="kw">class</span> <span class="cl">VisitorImposto</span> <span class="kw">implements</span> <span class="cl">Visitor</span> {
+    <span class="kw">public void</span> <span class="mt">visitar</span>(<span class="cl">Pizza</span> p) {
+        System.out.println(<span class="st">"Imposto pizza '"</span>+p.<span class="mt">getNome</span>()+<span class="st">"': R$"</span>+p.<span class="mt">getPreco</span>()*0.12);
+    }
+    <span class="kw">public void</span> <span class="mt">visitar</span>(<span class="cl">Bebida</span> b) {
+        System.out.println(<span class="st">"Imposto bebida '"</span>+b.<span class="mt">getNome</span>()+<span class="st">"': R$"</span>+b.<span class="mt">getPreco</span>()*0.20);
+    }
+    <span class="kw">public void</span> <span class="mt">visitar</span>(<span class="cl">Sobremesa</span> s) {
+        System.out.println(<span class="st">"Imposto sobremesa '"</span>+s.<span class="mt">getNome</span>()+<span class="st">"': R$"</span>+s.<span class="mt">getPreco</span>()*0.08);
+    }
+}
+
+<span class="cm">// VISITOR 2 — gera relatório simples</span>
+<span class="kw">class</span> <span class="cl">VisitorRelatorio</span> <span class="kw">implements</span> <span class="cl">Visitor</span> {
+    <span class="kw">public void</span> <span class="mt">visitar</span>(<span class="cl">Pizza</span> p)     { System.out.println(<span class="st">"[PIZZA]     "</span>+p.<span class="mt">getNome</span>()+<span class="st">" R$"</span>+p.<span class="mt">getPreco</span>()); }
+    <span class="kw">public void</span> <span class="mt">visitar</span>(<span class="cl">Bebida</span> b)    { System.out.println(<span class="st">"[BEBIDA]    "</span>+b.<span class="mt">getNome</span>()+<span class="st">" R$"</span>+b.<span class="mt">getPreco</span>()); }
+    <span class="kw">public void</span> <span class="mt">visitar</span>(<span class="cl">Sobremesa</span> s) { System.out.println(<span class="st">"[SOBREMESA] "</span>+s.<span class="mt">getNome</span>()+<span class="st">" R$"</span>+s.<span class="mt">getPreco</span>()); }
+}
+
+<span class="cm">// USO — mesmo pedido, dois visitors diferentes</span>
+List&lt;<span class="cl">ItemPedido</span>&gt; pedido = List.<span class="mt">of</span>(
+    <span class="kw">new</span> <span class="cl">Pizza</span>(<span class="st">"Margherita"</span>, 45.0),
+    <span class="kw">new</span> <span class="cl">Bebida</span>(<span class="st">"Suco"</span>, 12.0),
+    <span class="kw">new</span> <span class="cl">Sobremesa</span>(<span class="st">"Tiramisu"</span>, 18.0)
+);
+
+System.out.println(<span class="st">"=== Impostos ==="</span>);
+<span class="cl">Visitor</span> imposto = <span class="kw">new</span> <span class="cl">VisitorImposto</span>();
+pedido.<span class="mt">forEach</span>(item -> item.<span class="mt">aceitar</span>(imposto));
+
+System.out.println(<span class="st">"=== Relatório ==="</span>);
+<span class="cl">Visitor</span> relatorio = <span class="kw">new</span> <span class="cl">VisitorRelatorio</span>();
+pedido.<span class="mt">forEach</span>(item -> item.<span class="mt">aceitar</span>(relatorio));
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> compiladores usam Visitor para percorrer a árvore sintática e executar operações diferentes (validação, geração de código, otimização) sem modificar os nós da árvore. No mundo ERP, operações de auditoria, exportação fiscal e geração de relatórios sobre os mesmos objetos de domínio são candidatos naturais ao Visitor.
+  </div>
+</div>
+
+<!-- COMPARAÇÃO FINAL -->
+<div id="comparacao" class="panel">
+  <div class="section-title">Comparação final — todos os 10 Behavioral Patterns</div>
+  <table class="diff-table">
+    <tr><th>Padrão</th><th>Problema que resolve</th><th>Analogia pizzaria</th></tr>
+    <tr><td><strong>Chain of Responsibility</strong></td><td>Requisição percorre hierarquia até ser tratada</td><td>Aprovação de desconto por alçada</td></tr>
+    <tr><td><strong>Command</strong></td><td>Encapsula ação como objeto para desfazer/enfileirar</td><td>Comanda com Ctrl+Z</td></tr>
+    <tr><td><strong>Iterator</strong></td><td>Percorre coleção sem expor sua estrutura interna</td><td>Garçom lê cardápio sem saber se é lista ou array</td></tr>
+    <tr><td><strong>Mediator</strong></td><td>Centraliza comunicação entre componentes acoplados</td><td>Gerente coordena atendente, cozinha e entregador</td></tr>
+    <tr><td><strong>Memento</strong></td><td>Salva e restaura estado sem violar encapsulamento</td><td>Pedido com histórico de versões para desfazer</td></tr>
+    <tr><td><strong>Observer</strong></td><td>Notifica vários interessados quando algo muda</td><td>Cozinha notifica entregador, caixa e cliente</td></tr>
+    <tr><td><strong>State</strong></td><td>Comportamento muda conforme estado interno do objeto</td><td>Pedido que bloqueia cancelamento quando já saiu</td></tr>
+    <tr><td><strong>Strategy</strong></td><td>Algoritmo trocável em tempo de execução</td><td>Forma de pagamento escolhida pelo cliente</td></tr>
+    <tr><td><strong>Template Method</strong></td><td>Esqueleto fixo de algoritmo com etapas variáveis</td><td>Receita de pizza com passos comuns e variações</td></tr>
+    <tr><td><strong>Visitor</strong></td><td>Nova operação sobre objetos sem modificar suas classes</td><td>Calcular imposto e gerar relatório sem tocar nos itens</td></tr>
+  </table>
+
+  <div class="hi">
+    <strong>Os mais importantes para o seu perfil (entrevistas de arquitetura Java/Spring):</strong><br><br>
+    1. <strong>Strategy</strong> — base de injeção de dependência e princípio Open/Closed<br>
+    2. <strong>Observer</strong> — eventos, pub/sub, Spring Events<br>
+    3. <strong>Template Method</strong> — frameworks, batch, pipelines de integração<br>
+    4. <strong>Command</strong> — filas de mensagem, operações reversíveis<br>
+    5. <strong>State</strong> — workflows, status de documentos fiscais<br>
+    6. <strong>Chain of Responsibility</strong> — filtros, validações em pipeline, alçadas de aprovação
+  </div>
+
+  <div class="warn">
+    <strong>Confusões mais comuns em entrevista:</strong><br><br>
+    Strategy vs Template Method → Strategy usa composição (troca o objeto). Template Method usa herança (troca a subclasse).<br><br>
+    Command vs Memento → Command guarda a ação e executa o inverso. Memento guarda o estado completo e restaura direto.<br><br>
+    Observer vs Mediator → Observer: subject ainda conhece observers. Mediator: ninguém conhece ninguém — acoplamento zero entre componentes.
+  </div>
+</div>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>

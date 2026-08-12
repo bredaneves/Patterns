@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Patterns — Guia da Pizzaria</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; padding: 40px 24px; }
+
+  h1 { font-size: 1.5rem; color: #f1f5f9; text-align: center; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: #64748b; font-size: 0.85rem; margin-bottom: 40px; }
+
+  .group { margin-bottom: 36px; }
+  .group-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid #1e2030; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+
+  .card {
+    background: #1a1d27;
+    border: 1px solid #2d3148;
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-decoration: none;
+    display: block;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .card:hover { transform: translateY(-2px); }
+
+  .card.creational { border-left: 4px solid #a78bfa; }
+  .card.creational:hover { border-color: #a78bfa; }
+  .card.creational .tag { color: #a78bfa; }
+
+  .card.structural { border-left: 4px solid #60a5fa; }
+  .card.structural:hover { border-color: #60a5fa; }
+  .card.structural .tag { color: #60a5fa; }
+
+  .card.behavioral { border-left: 4px solid #f472b6; }
+  .card.behavioral:hover { border-color: #f472b6; }
+  .card.behavioral .tag { color: #f472b6; }
+
+  .card .tag { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .card h3 { font-size: 0.95rem; color: #f1f5f9; margin-bottom: 6px; }
+  .card p  { font-size: 0.8rem; color: #64748b; line-height: 1.5; }
+
+  .footer { text-align: center; color: #334155; font-size: 0.78rem; margin-top: 48px; }
+</style>
+</head>
+<body>
+
+<h1>Design Patterns — Guia da Pizzaria</h1>
+<p class="subtitle">23 padrões GoF explicados com analogia da pizzaria · Java · Alexandre Breda Neves</p>
+
+<!-- CREATIONAL -->
+<div class="group">
+  <div class="group-title">Creational Patterns — como os objetos nascem</div>
+  <div class="cards">
+
+    <a class="card creational" href="design-patterns-pizza.html">
+      <div class="tag">Creational</div>
+      <h3>Factory Method &amp; Abstract Factory</h3>
+      <p>Pizzaria decide qual pizza fazer. Família de produtos compatíveis entre si.</p>
+    </a>
+
+    <a class="card creational" href="builder-prototype-pizza.html">
+      <div class="tag">Creational</div>
+      <h3>Builder &amp; Prototype</h3>
+      <p>Pizza personalizada passo a passo. Clonar pizza do cardápio base.</p>
+    </a>
+
+    <a class="card creational" href="singleton-pizza.html">
+      <div class="tag">Creational</div>
+      <h3>Singleton</h3>
+      <p>Um único Gerente de Pedidos para toda a pizzaria.</p>
+    </a>
+
+  </div>
+</div>
+
+<!-- STRUCTURAL -->
+<div class="group">
+  <div class="group-title">Structural Patterns — como os objetos se encaixam</div>
+  <div class="cards">
+
+    <a class="card structural" href="structural-parte1.html">
+      <div class="tag">Structural · Parte 1</div>
+      <h3>Adapter · Facade · Proxy</h3>
+      <p>Converter kg↔libras. Botão "abrir pizzaria". Cache do fornecedor premium.</p>
+    </a>
+
+    <a class="card structural" href="structural-parte2.html">
+      <div class="tag">Structural · Parte 2</div>
+      <h3>Bridge · Composite · Decorator · Flyweight</h3>
+      <p>Pizza + canal independentes. Combos em árvore. Extras empilhados. Tipos compartilhados.</p>
+    </a>
+
+  </div>
+</div>
+
+<!-- BEHAVIORAL -->
+<div class="group">
+  <div class="group-title">Behavioral Patterns — como os objetos conversam</div>
+  <div class="cards">
+
+    <a class="card behavioral" href="behavioral-parte1.html">
+      <div class="tag">Behavioral · Parte 1</div>
+      <h3>Strategy · State · Command</h3>
+      <p>Forma de pagamento. Pedido avançando de status. Comanda com Ctrl+Z.</p>
+    </a>
+
+    <a class="card behavioral" href="behavioral-parte2.html">
+      <div class="tag">Behavioral · Parte 2</div>
+      <h3>Observer · Mediator · Chain of Responsibility</h3>
+      <p>Cozinha notifica todos. Gerente coordena setores. Aprovação por alçada.</p>
+    </a>
+
+    <a class="card behavioral" href="behavioral-parte3.html">
+      <div class="tag">Behavioral · Parte 3</div>
+      <h3>Iterator · Memento · Template Method · Visitor</h3>
+      <p>Percorrer cardápio. Desfazer pedido. Receita com passos fixos. Imposto sem tocar nos itens.</p>
+    </a>
+
+  </div>
+</div>
+
+<div class="footer">design-patterns-java · todos os 23 padrões GoF · analogia da pizzaria</div>
+
+</body>
+</html>

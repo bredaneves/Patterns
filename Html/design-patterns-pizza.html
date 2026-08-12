@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory Method vs Abstract Factory</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+
+  header {
+    background: #1a1d27;
+    border-bottom: 1px solid #2d3148;
+    padding: 20px 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 1.3rem; color: #a78bfa; letter-spacing: 0.03em; }
+  header p  { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: #1a1d27;
+    border-bottom: 1px solid #2d3148;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 14px 22px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #64748b;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .tab:hover { color: #c4b5fd; }
+  .tab.active { color: #a78bfa; border-bottom-color: #a78bfa; }
+
+  .panel { display: none; padding: 24px; max-width: 900px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 8px;
+  }
+  .section-sub {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .problem-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .problem-box strong { color: #fbbf24; }
+
+  .code-block {
+    background: #12141c;
+    border: 1px solid #2d3148;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .code-block .label {
+    position: absolute;
+    top: 10px; right: 14px;
+    font-family: system-ui, sans-serif;
+    font-size: 0.7rem;
+    color: #475569;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .kw  { color: #c084fc; }  /* keyword */
+  .cl  { color: #67e8f9; }  /* class/interface name */
+  .mt  { color: #86efac; }  /* method */
+  .st  { color: #fde68a; }  /* string */
+  .cm  { color: #475569; font-style: italic; }  /* comment */
+  .an  { color: #fb923c; }  /* annotation */
+  .nm  { color: #f1f5f9; }  /* normal */
+
+  .diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-bottom: 20px;
+  }
+  .diff-table th {
+    background: #1e2030;
+    color: #a78bfa;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 2px solid #2d3148;
+  }
+  .diff-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #1e2030;
+    color: #cbd5e1;
+    vertical-align: top;
+  }
+  .diff-table tr:nth-child(even) td { background: #12141c; }
+
+  .arrow-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0 20px;
+    font-size: 0.8rem;
+  }
+  .flow-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: #e2e8f0;
+    white-space: nowrap;
+  }
+  .flow-arrow { color: #4b5563; font-size: 1rem; }
+
+  .highlight-box {
+    background: #1e2030;
+    border: 1px solid #a78bfa44;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #c4b5fd;
+    line-height: 1.7;
+  }
+  .highlight-box strong { color: #a78bfa; }
+
+  .expand-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-left: 4px solid #34d399;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .expand-box strong { color: #6ee7b7; }
+
+  h3 { font-size: 0.9rem; color: #94a3b8; margin: 20px 0 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Factory Method vs Abstract Factory</h1>
+  <p>O mesmo problema de pizzaria resolvido com cada padrão</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('fm-basic')">1. Factory Method</button>
+  <button class="tab" onclick="show('fm-expand')">2. Factory — expansão</button>
+  <button class="tab" onclick="show('af-basic')">3. Abstract Factory</button>
+  <button class="tab" onclick="show('af-expand')">4. Abstract — expansão</button>
+  <button class="tab" onclick="show('diff')">5. Comparação final</button>
+</div>
+
+<!-- ===================== PANEL 1: Factory Method básico ===================== -->
+<div id="fm-basic" class="panel active">
+  <div class="section-title">Factory Method — o problema inicial</div>
+  <div class="section-sub">Você tem uma pizzaria e quer criar pizzas de tipos diferentes sem amarrar o código a uma classe específica.</div>
+
+  <div class="problem-box">
+    <strong>Problema:</strong> o sistema precisa criar uma pizza, mas não quer saber <em>qual</em> pizza. Quem decide é a subclasse da pizzaria.
+  </div>
+
+  <h3>Estrutura de classes</h3>
+  <div class="arrow-flow">
+    <div class="flow-box">Pizzaria (abstract)</div>
+    <div class="flow-arrow">→ define</div>
+    <div class="flow-box">criarPizza()</div>
+    <div class="flow-arrow">→ subclasses implementam</div>
+    <div class="flow-box">PizzariaItaliana</div>
+    <div class="flow-arrow">+</div>
+    <div class="flow-box">PizzariaAmericana</div>
+  </div>
+
+  <div class="code-block">
+    <span class="label">Java</span>
+<span class="cm">// === PRODUTO ===</span>
+<span class="kw">interface</span> <span class="cl">Pizza</span> {
+    <span class="kw">void</span> <span class="mt">preparar</span>();
+}
+
+<span class="kw">class</span> <span class="cl">PizzaMargherita</span> <span class="kw">implements</span> <span class="cl">Pizza</span> {
+    <span class="kw">public void</span> <span class="mt">preparar</span>() {
+        System.out.println(<span class="st">"Pizza Margherita: massa fina, molho suave, mussarela"</span>);
+    }
+}
+
+<span class="kw">class</span> <span class="cl">PizzaPepperoni</span> <span class="kw">implements</span> <span class="cl">Pizza</span> {
+    <span class="kw">public void</span> <span class="mt">preparar</span>() {
+        System.out.println(<span class="st">"Pizza Pepperoni: massa grossa, molho picante, pepperoni"</span>);
+    }
+}
+
+<span class="cm">// === FÁBRICA (Factory Method) ===</span>
+<span class="kw">abstract class</span> <span class="cl">Pizzaria</span> {
+    <span class="cm">// Este é o Factory Method — subclasses decidem QUAL pizza criar</span>
+    <span class="kw">abstract</span> <span class="cl">Pizza</span> <span class="mt">criarPizza</span>();
+
+    <span class="kw">void</span> <span class="mt">fazerPedido</span>() {
+        <span class="cl">Pizza</span> pizza = <span class="mt">criarPizza</span>(); <span class="cm">// não sabe qual — não importa</span>
+        pizza.<span class="mt">preparar</span>();
+        System.out.println(<span class="st">"Pedido pronto!"</span>);
+    }
+}
+
+<span class="kw">class</span> <span class="cl">PizzariaItaliana</span> <span class="kw">extends</span> <span class="cl">Pizzaria</span> {
+    <span class="kw">public</span> <span class="cl">Pizza</span> <span class="mt">criarPizza</span>() { <span class="kw">return new</span> <span class="cl">PizzaMargherita</span>(); }
+}
+
+<span class="kw">class</span> <span class="cl">PizzariaAmericana</span> <span class="kw">extends</span> <span class="cl">Pizzaria</span> {
+    <span class="kw">public</span> <span class="cl">Pizza</span> <span class="mt">criarPizza</span>() { <span class="kw">return new</span> <span class="cl">PizzaPepperoni</span>(); }
+}
+
+<span class="cm">// === USO ===</span>
+<span class="cl">Pizzaria</span> p = <span class="kw">new</span> <span class="cl">PizzariaItaliana</span>();
+p.<span class="mt">fazerPedido</span>(); <span class="cm">// → Pizza Margherita: massa fina...</span>
+
+<span class="cl">Pizzaria</span> p2 = <span class="kw">new</span> <span class="cl">PizzariaAmericana</span>();
+p2.<span class="mt">fazerPedido</span>(); <span class="cm">// → Pizza Pepperoni: massa grossa...</span>
+  </div>
+
+  <div class="highlight-box">
+    <strong>O ponto central:</strong> a classe <code>Pizzaria</code> chama <code>criarPizza()</code> sem saber o que vai receber. A subclasse é quem decide. Você está variando <strong>um único produto</strong>.
+  </div>
+</div>
+
+<!-- ===================== PANEL 2: Factory Method — expansão ===================== -->
+<div id="fm-expand" class="panel">
+  <div class="section-title">Factory Method — depois da expansão</div>
+  <div class="section-sub">O negócio cresceu. Agora tem PizzariaVegetariana. O que muda?</div>
+
+  <div class="expand-box">
+    <strong>Regra de expansão:</strong> basta criar uma nova subclasse de <code>Pizzaria</code> e uma nova classe de <code>Pizza</code>. O restante do código não muda.
+  </div>
+
+  <div class="code-block">
+    <span class="label">Java</span>
+<span class="cm">// Novo produto</span>
+<span class="kw">class</span> <span class="cl">PizzaVegetariana</span> <span class="kw">implements</span> <span class="cl">Pizza</span> {
+    <span class="kw">public void</span> <span class="mt">preparar</span>() {
+        System.out.println(<span class="st">"Pizza Vegetariana: massa integral, legumes grelhados"</span>);
+    }
+}
+
+<span class="cm">// Nova fábrica — só isso</span>
+<span class="kw">class</span> <span class="cl">PizzariaVegetariana</span> <span class="kw">extends</span> <span class="cl">Pizzaria</span> {
+    <span class="kw">public</span> <span class="cl">Pizza</span> <span class="mt">criarPizza</span>() { <span class="kw">return new</span> <span class="cl">PizzaVegetariana</span>(); }
+}
+
+<span class="cm">// O código cliente continua idêntico</span>
+<span class="cl">Pizzaria</span> p = <span class="kw">new</span> <span class="cl">PizzariaVegetariana</span>();
+p.<span class="mt">fazerPedido</span>(); <span class="cm">// → Pizza Vegetariana: massa integral...</span>
+  </div>
+
+  <div class="highlight-box">
+    <strong>Perceba:</strong> a expansão foi simples porque cada pizzaria cria <strong>apenas uma coisa</strong>. Mas e se cada pizzaria precisasse também criar a bebida certa, a embalagem certa, o molho certo — tudo combinando entre si? O Factory Method começa a mostrar limitação aí. É exatamente esse problema que o Abstract Factory resolve.
+  </div>
+</div>
+
+<!-- ===================== PANEL 3: Abstract Factory básico ===================== -->
+<div id="af-basic" class="panel">
+  <div class="section-title">Abstract Factory — o problema que ele resolve</div>
+  <div class="section-sub">Agora cada pizzaria tem um estilo completo: massa, molho e ingrediente — e precisam ser compatíveis entre si. Não mistura massa italiana com ingrediente americano.</div>
+
+  <div class="problem-box">
+    <strong>Problema novo:</strong> não é mais um produto — são <strong>três produtos relacionados</strong>. A fábrica precisa garantir que todos sejam do mesmo estilo.
+  </div>
+
+  <h3>Estrutura de classes</h3>
+  <div class="arrow-flow">
+    <div class="flow-box">FabricaPizza (interface)</div>
+    <div class="flow-arrow">→ define</div>
+    <div class="flow-box">criarMassa()</div>
+    <div class="flow-arrow">+</div>
+    <div class="flow-box">criarMolho()</div>
+    <div class="flow-arrow">+</div>
+    <div class="flow-box">criarIngrediente()</div>
+  </div>
+
+  <div class="code-block">
+    <span class="label">Java</span>
+<span class="cm">// === FAMÍLIA DE PRODUTOS ===</span>
+<span class="kw">interface</span> <span class="cl">Massa</span>       { <span class="kw">void</span> <span class="mt">descrever</span>(); }
+<span class="kw">interface</span> <span class="cl">Molho</span>       { <span class="kw">void</span> <span class="mt">descrever</span>(); }
+<span class="kw">interface</span> <span class="cl">Ingrediente</span> { <span class="kw">void</span> <span class="mt">descrever</span>(); }
+
+<span class="cm">// Estilo Italiano</span>
+<span class="kw">class</span> <span class="cl">MassaFina</span>        <span class="kw">implements</span> <span class="cl">Massa</span>       { <span class="kw">public void</span> <span class="mt">descrever</span>() { System.out.println(<span class="st">"Massa fina"</span>); } }
+<span class="kw">class</span> <span class="cl">MolhoSuave</span>       <span class="kw">implements</span> <span class="cl">Molho</span>       { <span class="kw">public void</span> <span class="mt">descrever</span>() { System.out.println(<span class="st">"Molho suave"</span>); } }
+<span class="kw">class</span> <span class="cl">Mussarela</span>        <span class="kw">implements</span> <span class="cl">Ingrediente</span> { <span class="kw">public void</span> <span class="mt">descrever</span>() { System.out.println(<span class="st">"Mussarela fresca"</span>); } }
+
+<span class="cm">// Estilo Americano</span>
+<span class="kw">class</span> <span class="cl">MassaGrossa</span>      <span class="kw">implements</span> <span class="cl">Massa</span>       { <span class="kw">public void</span> <span class="mt">descrever</span>() { System.out.println(<span class="st">"Massa grossa"</span>); } }
+<span class="kw">class</span> <span class="cl">MolhoPicante</span>     <span class="kw">implements</span> <span class="cl">Molho</span>       { <span class="kw">public void</span> <span class="mt">descrever</span>() { System.out.println(<span class="st">"Molho picante"</span>); } }
+<span class="kw">class</span> <span class="cl">Pepperoni</span>        <span class="kw">implements</span> <span class="cl">Ingrediente</span> { <span class="kw">public void</span> <span class="mt">descrever</span>() { System.out.println(<span class="st">"Pepperoni"</span>); } }
+
+<span class="cm">// === ABSTRACT FACTORY ===</span>
+<span class="kw">interface</span> <span class="cl">FabricaPizza</span> {
+    <span class="cl">Massa</span>       <span class="mt">criarMassa</span>();
+    <span class="cl">Molho</span>       <span class="mt">criarMolho</span>();
+    <span class="cl">Ingrediente</span> <span class="mt">criarIngrediente</span>();
+}
+
+<span class="kw">class</span> <span class="cl">FabricaItaliana</span> <span class="kw">implements</span> <span class="cl">FabricaPizza</span> {
+    <span class="kw">public</span> <span class="cl">Massa</span>       <span class="mt">criarMassa</span>()       { <span class="kw">return new</span> <span class="cl">MassaFina</span>(); }
+    <span class="kw">public</span> <span class="cl">Molho</span>       <span class="mt">criarMolho</span>()       { <span class="kw">return new</span> <span class="cl">MolhoSuave</span>(); }
+    <span class="kw">public</span> <span class="cl">Ingrediente</span> <span class="mt">criarIngrediente</span>() { <span class="kw">return new</span> <span class="cl">Mussarela</span>(); }
+}
+
+<span class="kw">class</span> <span class="cl">FabricaAmericana</span> <span class="kw">implements</span> <span class="cl">FabricaPizza</span> {
+    <span class="kw">public</span> <span class="cl">Massa</span>       <span class="mt">criarMassa</span>()       { <span class="kw">return new</span> <span class="cl">MassaGrossa</span>(); }
+    <span class="kw">public</span> <span class="cl">Molho</span>       <span class="mt">criarMolho</span>()       { <span class="kw">return new</span> <span class="cl">MolhoPicante</span>(); }
+    <span class="kw">public</span> <span class="cl">Ingrediente</span> <span class="mt">criarIngrediente</span>() { <span class="kw">return new</span> <span class="cl">Pepperoni</span>(); }
+}
+
+<span class="cm">// === MONTADOR — usa a fábrica sem saber qual é ===</span>
+<span class="kw">class</span> <span class="cl">MontadorPizza</span> {
+    <span class="kw">private</span> <span class="cl">FabricaPizza</span> fabrica;
+
+    <span class="cl">MontadorPizza</span>(<span class="cl">FabricaPizza</span> fabrica) { <span class="kw">this</span>.fabrica = fabrica; }
+
+    <span class="kw">void</span> <span class="mt">montar</span>() {
+        fabrica.<span class="mt">criarMassa</span>().<span class="mt">descrever</span>();
+        fabrica.<span class="mt">criarMolho</span>().<span class="mt">descrever</span>();
+        fabrica.<span class="mt">criarIngrediente</span>().<span class="mt">descrever</span>();
+    }
+}
+
+<span class="cm">// === USO ===</span>
+<span class="cl">MontadorPizza</span> m1 = <span class="kw">new</span> <span class="cl">MontadorPizza</span>(<span class="kw">new</span> <span class="cl">FabricaItaliana</span>());
+m1.<span class="mt">montar</span>(); <span class="cm">// Massa fina / Molho suave / Mussarela fresca</span>
+
+<span class="cl">MontadorPizza</span> m2 = <span class="kw">new</span> <span class="cl">MontadorPizza</span>(<span class="kw">new</span> <span class="cl">FabricaAmericana</span>());
+m2.<span class="mt">montar</span>(); <span class="cm">// Massa grossa / Molho picante / Pepperoni</span>
+  </div>
+
+  <div class="highlight-box">
+    <strong>O ponto central:</strong> o <code>MontadorPizza</code> não sabe qual fábrica está usando. Ele só chama os métodos. A fábrica garante que tudo que sair dela seja compatível — nunca vai misturar estilos.
+  </div>
+</div>
+
+<!-- ===================== PANEL 4: Abstract Factory — expansão ===================== -->
+<div id="af-expand" class="panel">
+  <div class="section-title">Abstract Factory — depois da expansão</div>
+  <div class="section-sub">Chegou o estilo Vegetariano. O que muda?</div>
+
+  <div class="expand-box">
+    <strong>Regra de expansão:</strong> crie os três novos produtos e uma nova fábrica que os agrupa. O <code>MontadorPizza</code> não muda nada.
+  </div>
+
+  <div class="code-block">
+    <span class="label">Java</span>
+<span class="cm">// Novos produtos do estilo Vegetariano</span>
+<span class="kw">class</span> <span class="cl">MassaIntegral</span>   <span class="kw">implements</span> <span class="cl">Massa</span>       { <span class="kw">public void</span> <span class="mt">descrever</span>() { System.out.println(<span class="st">"Massa integral"</span>); } }
+<span class="kw">class</span> <span class="cl">MolhoErvas</span>      <span class="kw">implements</span> <span class="cl">Molho</span>       { <span class="kw">public void</span> <span class="mt">descrever</span>() { System.out.println(<span class="st">"Molho de ervas"</span>); } }
+<span class="kw">class</span> <span class="cl">LegunesTostados</span> <span class="kw">implements</span> <span class="cl">Ingrediente</span> { <span class="kw">public void</span> <span class="mt">descrever</span>() { System.out.println(<span class="st">"Legumes tostados"</span>); } }
+
+<span class="cm">// Nova fábrica que agrupa os três</span>
+<span class="kw">class</span> <span class="cl">FabricaVegetariana</span> <span class="kw">implements</span> <span class="cl">FabricaPizza</span> {
+    <span class="kw">public</span> <span class="cl">Massa</span>       <span class="mt">criarMassa</span>()       { <span class="kw">return new</span> <span class="cl">MassaIntegral</span>(); }
+    <span class="kw">public</span> <span class="cl">Molho</span>       <span class="mt">criarMolho</span>()       { <span class="kw">return new</span> <span class="cl">MolhoErvas</span>(); }
+    <span class="kw">public</span> <span class="cl">Ingrediente</span> <span class="mt">criarIngrediente</span>() { <span class="kw">return new</span> <span class="cl">LegunesTostados</span>(); }
+}
+
+<span class="cm">// O MontadorPizza não mudou uma linha</span>
+<span class="cl">MontadorPizza</span> m3 = <span class="kw">new</span> <span class="cl">MontadorPizza</span>(<span class="kw">new</span> <span class="cl">FabricaVegetariana</span>());
+m3.<span class="mt">montar</span>(); <span class="cm">// Massa integral / Molho de ervas / Legumes tostados</span>
+  </div>
+
+  <div class="highlight-box">
+    <strong>A garantia do padrão:</strong> é impossível montar uma pizza com massa italiana e molho vegetariano acidentalmente. A fábrica é a guardiã da consistência. Isso é o valor central do Abstract Factory.
+  </div>
+</div>
+
+<!-- ===================== PANEL 5: Comparação ===================== -->
+<div id="diff" class="panel">
+  <div class="section-title">Comparação final</div>
+  <div class="section-sub">Os dois padrões resolvem problemas diferentes. Use isso como guia de decisão.</div>
+
+  <table class="diff-table">
+    <tr>
+      <th>Critério</th>
+      <th>Factory Method</th>
+      <th>Abstract Factory</th>
+    </tr>
+    <tr>
+      <td>Quantos produtos cria?</td>
+      <td>Um único produto</td>
+      <td>Uma família de produtos relacionados</td>
+    </tr>
+    <tr>
+      <td>Como varia?</td>
+      <td>Subclasse sobrescreve um método</td>
+      <td>Você troca a fábrica inteira</td>
+    </tr>
+    <tr>
+      <td>Garantia de consistência?</td>
+      <td>Não — cada produto é independente</td>
+      <td>Sim — a fábrica garante compatibilidade</td>
+    </tr>
+    <tr>
+      <td>Como expandir?</td>
+      <td>Nova subclasse + novo produto</td>
+      <td>Nova fábrica + novos produtos da família</td>
+    </tr>
+    <tr>
+      <td>Pergunta que responde</td>
+      <td>"Qual subclasse cria este objeto?"</td>
+      <td>"Como garantir que objetos relacionados sejam compatíveis?"</td>
+    </tr>
+    <tr>
+      <td>Exemplo pizzaria</td>
+      <td>Cada pizzaria decide qual pizza fazer</td>
+      <td>Cada pizzaria define massa + molho + ingrediente combinando</td>
+    </tr>
+  </table>
+
+  <div class="highlight-box">
+    <strong>Regra prática para reconhecer na entrevista ou no código:</strong><br><br>
+    Se a fábrica tem <strong>um único método</strong> <code>criar...()</code> → provavelmente Factory Method.<br>
+    Se a fábrica tem <strong>dois ou mais métodos</strong> e os produtos precisam andar juntos → Abstract Factory.
+  </div>
+
+  <div class="problem-box">
+    <strong>Onde você vai ver isso no mundo real:</strong><br><br>
+    Factory Method → Spring usa isso internamente para criar beans, conexões, handlers.<br>
+    Abstract Factory → drivers de banco de dados (cada banco cria Connection, Statement e ResultSet compatíveis entre si), kits de UI (cada tema cria botão + menu + janela do mesmo estilo).
+  </div>
+</div>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>

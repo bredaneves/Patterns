@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structural Patterns — Parte 1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+  header { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 20px 24px; text-align: center; }
+  header h1 { font-size: 1.3rem; color: #60a5fa; letter-spacing: 0.03em; }
+  header p  { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+
+  .tabs { display: flex; background: #1a1d27; border-bottom: 1px solid #2d3148; overflow-x: auto; }
+  .tab {
+    padding: 13px 18px; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap;
+    transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .tab:hover { color: #93c5fd; }
+  .tab.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+
+  .panel { display: none; padding: 24px; max-width: 920px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .section-sub   { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+
+  .prob  { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f59e0b; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .prob strong { color:#fbbf24; }
+  .hi    { background:#1e2030; border:1px solid #60a5fa44; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#93c5fd; line-height:1.75; }
+  .hi strong { color:#60a5fa; }
+  .ok    { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #34d399; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .ok strong { color:#6ee7b7; }
+  .warn  { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f87171; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .warn strong { color:#fca5a5; }
+
+  .code-block {
+    background:#12141c; border:1px solid #2d3148; border-radius:8px;
+    padding:20px; font-family:'Cascadia Code','Fira Code',Consolas,monospace;
+    font-size:0.77rem; line-height:1.85; overflow-x:auto; margin-bottom:16px;
+    position:relative; white-space:pre;
+  }
+  .code-block .lbl { position:absolute; top:10px; right:14px; font-family:system-ui,sans-serif; font-size:0.68rem; color:#475569; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .kw { color:#c084fc; } .cl { color:#67e8f9; } .mt { color:#86efac; }
+  .st { color:#fde68a; } .cm { color:#475569; font-style:italic; } .an { color:#fb923c; }
+
+  .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:12px 0 20px; font-size:0.8rem; }
+  .fb  { background:#1e2030; border:1px solid #2d3148; border-radius:6px; padding:6px 12px; color:#e2e8f0; white-space:nowrap; }
+  .fhi { background:#1b2340; border:1px solid #60a5fa55; border-radius:6px; padding:6px 12px; color:#60a5fa; font-weight:700; white-space:nowrap; }
+  .fa  { color:#4b5563; }
+
+  .diff-table { width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:20px; }
+  .diff-table th { background:#1e2030; color:#60a5fa; padding:10px 14px; text-align:left; font-weight:700; border-bottom:2px solid #2d3148; }
+  .diff-table td { padding:10px 14px; border-bottom:1px solid #1e2030; color:#cbd5e1; vertical-align:top; }
+  .diff-table tr:nth-child(even) td { background:#12141c; }
+
+  h3 { font-size:0.85rem; color:#94a3b8; margin:20px 0 8px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Structural Patterns — Parte 1</h1>
+  <p>Adapter · Facade · Proxy — os três "intermediários" da pizzaria</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('intro')">Visão geral</button>
+  <button class="tab" onclick="show('adapter-prob')">Adapter — problema</button>
+  <button class="tab" onclick="show('adapter-cod')">Adapter — código</button>
+  <button class="tab" onclick="show('facade-prob')">Facade — problema</button>
+  <button class="tab" onclick="show('facade-cod')">Facade — código</button>
+  <button class="tab" onclick="show('proxy-prob')">Proxy — problema</button>
+  <button class="tab" onclick="show('proxy-cod')">Proxy — código</button>
+  <button class="tab" onclick="show('comparacao')">Comparação final</button>
+</div>
+
+<!-- INTRO -->
+<div id="intro" class="panel active">
+  <div class="section-title">Os três "intermediários" — por que confundem?</div>
+  <div class="section-sub">Adapter, Facade e Proxy parecem iguais à primeira vista — todos colocam algo no meio do caminho entre quem chama e quem executa. A diferença está na <strong>intenção</strong>.</div>
+
+  <div class="prob">
+    <strong>Adapter</strong> — o problema é incompatibilidade de interface.<br>
+    Você tem dois sistemas que não falam a mesma língua. O Adapter traduz.<br><br>
+    <strong>Facade</strong> — o problema é complexidade.<br>
+    Você tem muitos subsistemas complicados. A Facade oferece uma entrada simples.<br><br>
+    <strong>Proxy</strong> — o problema é controle de acesso ou custo.<br>
+    Você quer interceptar o acesso a um objeto para fazer algo antes ou depois (cache, log, segurança).
+  </div>
+
+  <div class="flow">
+    <div class="fb">Sistema A (interface X)</div>
+    <div class="fa">→</div>
+    <div class="fhi">Adapter</div>
+    <div class="fa">→</div>
+    <div class="fb">Sistema B (interface Y)</div>
+  </div>
+  <div class="flow">
+    <div class="fb">Cliente</div>
+    <div class="fa">→</div>
+    <div class="fhi">Facade</div>
+    <div class="fa">→</div>
+    <div class="fb">Subsistema A + B + C + D</div>
+  </div>
+  <div class="flow">
+    <div class="fb">Cliente</div>
+    <div class="fa">→</div>
+    <div class="fhi">Proxy</div>
+    <div class="fa">→</div>
+    <div class="fb">Objeto Real (mesma interface)</div>
+  </div>
+
+  <div class="hi">
+    <strong>A diferença mais importante:</strong> Adapter muda a interface. Facade simplifica várias interfaces. Proxy mantém a mesma interface mas intercepta o acesso.
+  </div>
+</div>
+
+<!-- ADAPTER PROBLEMA -->
+<div id="adapter-prob" class="panel">
+  <div class="section-title">Adapter — o problema</div>
+  <div class="section-sub">A pizzaria sempre trabalhou com fornecedores locais que entregam ingredientes em kg. Chegou um fornecedor italiano premium que trabalha só com libras (lb). O sistema de estoque não entende libras.</div>
+
+  <div class="prob">
+    <strong>Situação:</strong> o sistema de estoque espera um objeto com o método <code>entregarEmKg()</code>. O fornecedor italiano só tem <code>deliverInPounds()</code>. Você não pode mudar nenhum dos dois — o estoque é legado e o fornecedor é externo.<br><br>
+    <strong>Solução:</strong> criar um Adapter que "traduz" a chamada — recebe <code>entregarEmKg()</code>, converte para libras, e chama <code>deliverInPounds()</code>.
+  </div>
+
+  <h3>Analogia visual</h3>
+  <div class="flow">
+    <div class="fb">Estoque chama entregarEmKg(10)</div>
+    <div class="fa">→</div>
+    <div class="fhi">FornecedorItalianoAdapter</div>
+    <div class="fa">→ converte → 22 lbs →</div>
+    <div class="fb">deliverInPounds(22)</div>
+  </div>
+
+  <div class="hi">
+    <strong>Regra de ouro:</strong> use Adapter quando você tem código que não pode mudar dos dois lados e precisa fazê-los conversar. É o padrão do "plug de tomada" — você não muda a tomada nem o aparelho, só usa um adaptador.
+  </div>
+</div>
+
+<!-- ADAPTER CÓDIGO -->
+<div id="adapter-cod" class="panel">
+  <div class="section-title">Adapter — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// Interface que o estoque da pizzaria conhece</span>
+<span class="kw">interface</span> <span class="cl">Fornecedor</span> {
+    <span class="kw">void</span> <span class="mt">entregarEmKg</span>(<span class="kw">double</span> kg);
+}
+
+<span class="cm">// Fornecedor local — já funciona direto</span>
+<span class="kw">class</span> <span class="cl">FornecedorLocal</span> <span class="kw">implements</span> <span class="cl">Fornecedor</span> {
+    <span class="kw">public void</span> <span class="mt">entregarEmKg</span>(<span class="kw">double</span> kg) {
+        System.out.println(<span class="st">"Entregando "</span> + kg + <span class="st">"kg localmente"</span>);
+    }
+}
+
+<span class="cm">// Fornecedor italiano — interface incompatível, não podemos mudar</span>
+<span class="kw">class</span> <span class="cl">FornecedorItaliano</span> {
+    <span class="kw">public void</span> <span class="mt">deliverInPounds</span>(<span class="kw">double</span> lbs) {
+        System.out.println(<span class="st">"Delivering "</span> + lbs + <span class="st">" lbs from Italy"</span>);
+    }
+}
+
+<span class="cm">// ADAPTER — traduz kg → lbs e delega ao italiano</span>
+<span class="kw">class</span> <span class="cl">FornecedorItalianoAdapter</span> <span class="kw">implements</span> <span class="cl">Fornecedor</span> {
+    <span class="kw">private</span> <span class="cl">FornecedorItaliano</span> italiano;
+
+    <span class="kw">public</span> <span class="cl">FornecedorItalianoAdapter</span>(<span class="cl">FornecedorItaliano</span> italiano) {
+        <span class="kw">this</span>.italiano = italiano;
+    }
+
+    <span class="kw">public void</span> <span class="mt">entregarEmKg</span>(<span class="kw">double</span> kg) {
+        <span class="kw">double</span> lbs = kg * 2.205; <span class="cm">// conversão</span>
+        italiano.<span class="mt">deliverInPounds</span>(lbs);
+    }
+}
+
+<span class="cm">// USO — o estoque não sabe que está falando com um italiano</span>
+<span class="kw">class</span> <span class="cl">Estoque</span> {
+    <span class="kw">void</span> <span class="mt">receberIngredientes</span>(<span class="cl">Fornecedor</span> f, <span class="kw">double</span> kg) {
+        f.<span class="mt">entregarEmKg</span>(kg); <span class="cm">// sempre chama a mesma interface</span>
+    }
+}
+
+<span class="cl">Estoque</span> estoque = <span class="kw">new</span> <span class="cl">Estoque</span>();
+
+estoque.<span class="mt">receberIngredientes</span>(<span class="kw">new</span> <span class="cl">FornecedorLocal</span>(), 10);
+<span class="cm">// → Entregando 10.0kg localmente</span>
+
+estoque.<span class="mt">receberIngredientes</span>(
+    <span class="kw">new</span> <span class="cl">FornecedorItalianoAdapter</span>(<span class="kw">new</span> <span class="cl">FornecedorItaliano</span>()), 10);
+<span class="cm">// → Delivering 22.05 lbs from Italy</span>
+</div>
+  <div class="ok">
+    <strong>O estoque nunca soube da conversão.</strong> O Adapter absorveu toda a incompatibilidade. Isso é exatamente o que acontece quando você integra APIs externas com sistemas legados — contexto que você conhece bem do mundo ERP.
+  </div>
+</div>
+
+<!-- FACADE PROBLEMA -->
+<div id="facade-prob" class="panel">
+  <div class="section-title">Facade — o problema</div>
+  <div class="section-sub">Para abrir a pizzaria toda manhã, o gerente precisa: ligar o forno, verificar o estoque, ativar o sistema de pedidos, ligar o caixa e notificar os entregadores. São 5 subsistemas diferentes, cada um com sua própria interface.</div>
+
+  <div class="prob">
+    <strong>Situação sem Facade:</strong> o gerente precisa conhecer todos os subsistemas em detalhes e chamar cada um na ordem certa. Se um novo funcionário assumir, precisa aprender tudo do zero. Se a ordem mudar, é necessário atualizar em vários lugares.<br><br>
+    <strong>Solução:</strong> uma Facade com um único método <code>abrirPizzaria()</code> que encapsula toda a sequência internamente.
+  </div>
+
+  <h3>Analogia visual</h3>
+  <div class="flow">
+    <div class="fb">Gerente chama abrirPizzaria()</div>
+    <div class="fa">→</div>
+    <div class="fhi">PizzariaFacade</div>
+  </div>
+  <div class="flow">
+    <div class="fa" style="margin-left:20px">↓ liga</div>
+    <div class="fb">Forno</div>
+    <div class="fa">+ verifica</div>
+    <div class="fb">Estoque</div>
+    <div class="fa">+ ativa</div>
+    <div class="fb">Pedidos</div>
+    <div class="fa">+ liga</div>
+    <div class="fb">Caixa</div>
+    <div class="fa">+ notifica</div>
+    <div class="fb">Entregadores</div>
+  </div>
+
+  <div class="hi">
+    <strong>Diferença do Adapter:</strong> o Adapter serve para compatibilidade entre interfaces incompatíveis. A Facade serve para simplificar um conjunto complexo de interfaces que já funcionam — mas que são trabalhosas de usar diretamente.
+  </div>
+</div>
+
+<!-- FACADE CÓDIGO -->
+<div id="facade-cod" class="panel">
+  <div class="section-title">Facade — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// Subsistemas — cada um com sua própria complexidade</span>
+<span class="kw">class</span> <span class="cl">Forno</span> {
+    <span class="kw">void</span> <span class="mt">ligar</span>()   { System.out.println(<span class="st">"Forno aquecendo a 280°C"</span>); }
+    <span class="kw">void</span> <span class="mt">desligar</span>() { System.out.println(<span class="st">"Forno desligado"</span>); }
+}
+
+<span class="kw">class</span> <span class="cl">Estoque</span> {
+    <span class="kw">boolean</span> <span class="mt">verificar</span>() {
+        System.out.println(<span class="st">"Estoque verificado — OK"</span>);
+        <span class="kw">return true</span>;
+    }
+}
+
+<span class="kw">class</span> <span class="cl">SistemaPedidos</span> {
+    <span class="kw">void</span> <span class="mt">ativar</span>() { System.out.println(<span class="st">"Sistema de pedidos online"</span>); }
+    <span class="kw">void</span> <span class="mt">desativar</span>() { System.out.println(<span class="st">"Pedidos encerrados"</span>); }
+}
+
+<span class="kw">class</span> <span class="cl">Caixa</span> {
+    <span class="kw">void</span> <span class="mt">abrir</span>()   { System.out.println(<span class="st">"Caixa aberto"</span>); }
+    <span class="kw">void</span> <span class="mt">fechar</span>()  { System.out.println(<span class="st">"Caixa fechado"</span>); }
+}
+
+<span class="kw">class</span> <span class="cl">Entregadores</span> {
+    <span class="kw">void</span> <span class="mt">notificar</span>() { System.out.println(<span class="st">"Entregadores notificados"</span>); }
+}
+
+<span class="cm">// FACADE — esconde toda a complexidade atrás de métodos simples</span>
+<span class="kw">class</span> <span class="cl">PizzariaFacade</span> {
+    <span class="kw">private final</span> <span class="cl">Forno</span>          forno       = <span class="kw">new</span> <span class="cl">Forno</span>();
+    <span class="kw">private final</span> <span class="cl">Estoque</span>        estoque     = <span class="kw">new</span> <span class="cl">Estoque</span>();
+    <span class="kw">private final</span> <span class="cl">SistemaPedidos</span> pedidos     = <span class="kw">new</span> <span class="cl">SistemaPedidos</span>();
+    <span class="kw">private final</span> <span class="cl">Caixa</span>          caixa       = <span class="kw">new</span> <span class="cl">Caixa</span>();
+    <span class="kw">private final</span> <span class="cl">Entregadores</span>   entregadores = <span class="kw">new</span> <span class="cl">Entregadores</span>();
+
+    <span class="kw">void</span> <span class="mt">abrirPizzaria</span>() {
+        System.out.println(<span class="st">"=== Abrindo a pizzaria ==="</span>);
+        forno.<span class="mt">ligar</span>();
+        estoque.<span class="mt">verificar</span>();
+        pedidos.<span class="mt">ativar</span>();
+        caixa.<span class="mt">abrir</span>();
+        entregadores.<span class="mt">notificar</span>();
+    }
+
+    <span class="kw">void</span> <span class="mt">fecharPizzaria</span>() {
+        System.out.println(<span class="st">"=== Fechando a pizzaria ==="</span>);
+        pedidos.<span class="mt">desativar</span>();
+        caixa.<span class="mt">fechar</span>();
+        forno.<span class="mt">desligar</span>();
+    }
+}
+
+<span class="cm">// USO — o gerente não precisa saber nada dos subsistemas</span>
+<span class="cl">PizzariaFacade</span> pizzaria = <span class="kw">new</span> <span class="cl">PizzariaFacade</span>();
+pizzaria.<span class="mt">abrirPizzaria</span>();
+<span class="cm">// === Abrindo a pizzaria ===</span>
+<span class="cm">// Forno aquecendo a 280°C</span>
+<span class="cm">// Estoque verificado — OK</span>
+<span class="cm">// Sistema de pedidos online</span>
+<span class="cm">// Caixa aberto</span>
+<span class="cm">// Entregadores notificados</span>
+
+pizzaria.<span class="mt">fecharPizzaria</span>();
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> o Datasul/ERP inteiro é uma grande Facade — você chama uma rotina de faturamento e ela internamente aciona fiscal, estoque, financeiro, contabilidade. Você não precisa saber a ordem de cada módulo.
+  </div>
+</div>
+
+<!-- PROXY PROBLEMA -->
+<div id="proxy-prob" class="panel">
+  <div class="section-title">Proxy — o problema</div>
+  <div class="section-sub">A pizzaria tem um fornecedor premium muito caro de consultar — cada consulta de cardápio cobra uma taxa. O sistema consulta esse fornecedor repetidamente mesmo quando o cardápio não mudou.</div>
+
+  <div class="prob">
+    <strong>Situação:</strong> o objeto real (<code>FornecedorPremium</code>) é caro de acessar — pode ser lento, pago, ou restrito. Você quer controlar quando e como ele é acessado, sem mudar o código que o usa.<br><br>
+    <strong>Solução:</strong> um Proxy que implementa a mesma interface do objeto real, mas adiciona cache, log ou controle de acesso antes de delegar.
+  </div>
+
+  <h3>Tipos comuns de Proxy</h3>
+  <div class="prob">
+    <strong>Virtual Proxy</strong> — cria o objeto real só quando realmente necessário (lazy loading).<br><br>
+    <strong>Caching Proxy</strong> — guarda o resultado da última chamada e evita reconsultar o objeto real.<br><br>
+    <strong>Protection Proxy</strong> — verifica permissões antes de deixar o acesso passar.<br><br>
+    <strong>Logging Proxy</strong> — registra cada acesso para auditoria.
+  </div>
+
+  <div class="hi">
+    <strong>Diferença do Facade:</strong> a Facade simplifica múltiplos subsistemas numa interface nova. O Proxy mantém a <em>mesma interface</em> do objeto original — quem usa não percebe que está falando com um intermediário.
+  </div>
+</div>
+
+<!-- PROXY CÓDIGO -->
+<div id="proxy-cod" class="panel">
+  <div class="section-title">Proxy — código (Caching Proxy)</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// Interface comum — Proxy e objeto real implementam a mesma</span>
+<span class="kw">interface</span> <span class="cl">FornecedorPremium</span> {
+    String <span class="mt">consultarCardapio</span>();
+}
+
+<span class="cm">// Objeto real — caro para consultar</span>
+<span class="kw">class</span> <span class="cl">FornecedorPremiumReal</span> <span class="kw">implements</span> <span class="cl">FornecedorPremium</span> {
+    <span class="kw">public</span> String <span class="mt">consultarCardapio</span>() {
+        System.out.println(<span class="st">"[REAL] Consultando fornecedor italiano... (custoso!)"</span>);
+        <span class="cm">// Simula chamada cara (API paga, rede lenta...)</span>
+        <span class="kw">return</span> <span class="st">"Cardápio: Burrata, Prosciutto, Tartufo"</span>;
+    }
+}
+
+<span class="cm">// PROXY com cache — mesma interface, acesso controlado</span>
+<span class="kw">class</span> <span class="cl">FornecedorPremiumProxy</span> <span class="kw">implements</span> <span class="cl">FornecedorPremium</span> {
+    <span class="kw">private</span> <span class="cl">FornecedorPremiumReal</span> real;
+    <span class="kw">private</span> String cache = <span class="kw">null</span>;
+
+    <span class="kw">public</span> String <span class="mt">consultarCardapio</span>() {
+        <span class="kw">if</span> (cache == <span class="kw">null</span>) {
+            System.out.println(<span class="st">"[PROXY] Cache vazio, consultando real..."</span>);
+            <span class="kw">if</span> (real == <span class="kw">null</span>) real = <span class="kw">new</span> <span class="cl">FornecedorPremiumReal</span>(); <span class="cm">// lazy</span>
+            cache = real.<span class="mt">consultarCardapio</span>();
+        } <span class="kw">else</span> {
+            System.out.println(<span class="st">"[PROXY] Retornando do cache"</span>);
+        }
+        <span class="kw">return</span> cache;
+    }
+}
+
+<span class="cm">// USO — o sistema não sabe se está falando com real ou proxy</span>
+<span class="cl">FornecedorPremium</span> fornecedor = <span class="kw">new</span> <span class="cl">FornecedorPremiumProxy</span>();
+
+fornecedor.<span class="mt">consultarCardapio</span>();
+<span class="cm">// [PROXY] Cache vazio, consultando real...</span>
+<span class="cm">// [REAL] Consultando fornecedor italiano... (custoso!)</span>
+
+fornecedor.<span class="mt">consultarCardapio</span>();
+<span class="cm">// [PROXY] Retornando do cache  ← sem custo</span>
+
+fornecedor.<span class="mt">consultarCardapio</span>();
+<span class="cm">// [PROXY] Retornando do cache  ← sem custo</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> o Spring usa Proxy extensivamente — quando você anota um método com <code>@Transactional</code> ou <code>@Cacheable</code>, o Spring cria um proxy transparente em volta do seu bean que intercepta a chamada e gerencia transação ou cache antes de delegar ao método real.
+  </div>
+</div>
+
+<!-- COMPARAÇÃO FINAL -->
+<div id="comparacao" class="panel">
+  <div class="section-title">Comparação final — Adapter, Facade e Proxy</div>
+
+  <table class="diff-table">
+    <tr>
+      <th>Critério</th>
+      <th>Adapter</th>
+      <th>Facade</th>
+      <th>Proxy</th>
+    </tr>
+    <tr>
+      <td>Problema que resolve</td>
+      <td>Incompatibilidade de interfaces</td>
+      <td>Complexidade de subsistemas</td>
+      <td>Controle de acesso / custo</td>
+    </tr>
+    <tr>
+      <td>Muda a interface?</td>
+      <td>Sim — traduz de uma para outra</td>
+      <td>Sim — cria uma nova mais simples</td>
+      <td>Não — mantém a mesma</td>
+    </tr>
+    <tr>
+      <td>Quantos objetos envolve?</td>
+      <td>Um objeto incompatível</td>
+      <td>Vários subsistemas</td>
+      <td>Um objeto real</td>
+    </tr>
+    <tr>
+      <td>Quem percebe o intermediário?</td>
+      <td>Ninguém — transparente</td>
+      <td>O cliente usa a Facade conscientemente</td>
+      <td>Ninguém — transparente</td>
+    </tr>
+    <tr>
+      <td>Analogia pizzaria</td>
+      <td>Adaptador kg ↔ libras para o fornecedor italiano</td>
+      <td>Botão "abrir pizzaria" que liga tudo</td>
+      <td>Cache do cardápio do fornecedor premium</td>
+    </tr>
+  </table>
+
+  <div class="hi">
+    <strong>Pergunta de decisão rápida:</strong><br><br>
+    "Tenho dois sistemas incompatíveis que precisam conversar?" → <strong>Adapter</strong><br>
+    "Tenho vários subsistemas complexos e quero uma entrada simples?" → <strong>Facade</strong><br>
+    "Quero controlar o acesso a um objeto sem que ninguém perceba?" → <strong>Proxy</strong>
+  </div>
+
+  <div class="warn">
+    <strong>Dica de entrevista:</strong> quando perguntarem a diferença entre os três, o detalhe que mais pesa é: <em>"Proxy mantém a mesma interface do objeto real. Adapter e Facade criam uma interface diferente."</em> Essa frase sozinha já diferencia quem entende de quem decorou.
+  </div>
+</div>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>

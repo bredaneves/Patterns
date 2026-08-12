@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Behavioral Patterns — Parte 2</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+  header { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 20px 24px; text-align: center; }
+  header h1 { font-size: 1.3rem; color: #38bdf8; letter-spacing: 0.03em; }
+  header p  { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+  .tabs { display: flex; background: #1a1d27; border-bottom: 1px solid #2d3148; overflow-x: auto; }
+  .tab { padding: 13px 16px; font-size: 0.81rem; font-weight: 600; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab:hover { color: #7dd3fc; }
+  .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+  .panel { display: none; padding: 24px; max-width: 920px; margin: 0 auto; }
+  .panel.active { display: block; }
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .section-sub { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+  .prob  { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f59e0b; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .prob strong { color:#fbbf24; }
+  .hi   { background:#1e2030; border:1px solid #38bdf844; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#7dd3fc; line-height:1.75; }
+  .hi strong { color:#38bdf8; }
+  .ok   { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #34d399; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .ok strong { color:#6ee7b7; }
+  .warn { background:#1e2030; border:1px solid #2d3148; border-left:4px solid #f87171; border-radius:8px; padding:16px 20px; margin-bottom:20px; font-size:0.84rem; color:#cbd5e1; line-height:1.75; }
+  .warn strong { color:#fca5a5; }
+  .code-block { background:#12141c; border:1px solid #2d3148; border-radius:8px; padding:20px; font-family:'Cascadia Code','Fira Code',Consolas,monospace; font-size:0.77rem; line-height:1.85; overflow-x:auto; margin-bottom:16px; position:relative; white-space:pre; }
+  .code-block .lbl { position:absolute; top:10px; right:14px; font-family:system-ui,sans-serif; font-size:0.68rem; color:#475569; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .kw{color:#c084fc;} .cl{color:#67e8f9;} .mt{color:#86efac;} .st{color:#fde68a;} .cm{color:#475569;font-style:italic;}
+  .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:12px 0 20px; font-size:0.8rem; }
+  .fb  { background:#1e2030; border:1px solid #2d3148; border-radius:6px; padding:6px 12px; color:#e2e8f0; white-space:nowrap; }
+  .fhi { background:#0f2030; border:1px solid #38bdf855; border-radius:6px; padding:6px 12px; color:#38bdf8; font-weight:700; white-space:nowrap; }
+  .fa  { color:#4b5563; }
+  .diff-table { width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:20px; }
+  .diff-table th { background:#1e2030; color:#38bdf8; padding:10px 14px; text-align:left; font-weight:700; border-bottom:2px solid #2d3148; }
+  .diff-table td { padding:10px 14px; border-bottom:1px solid #1e2030; color:#cbd5e1; vertical-align:top; }
+  .diff-table tr:nth-child(even) td { background:#12141c; }
+  h3 { font-size:0.85rem; color:#94a3b8; margin:20px 0 8px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Behavioral Patterns — Parte 2</h1>
+  <p>Observer · Mediator · Chain of Responsibility — comunicação entre objetos</p>
+</header>
+<div class="tabs">
+  <button class="tab active" onclick="show('intro')">Visão geral</button>
+  <button class="tab" onclick="show('observer-prob')">Observer — problema</button>
+  <button class="tab" onclick="show('observer-cod')">Observer — código</button>
+  <button class="tab" onclick="show('mediator-prob')">Mediator — problema</button>
+  <button class="tab" onclick="show('mediator-cod')">Mediator — código</button>
+  <button class="tab" onclick="show('chain-prob')">Chain — problema</button>
+  <button class="tab" onclick="show('chain-cod')">Chain — código</button>
+  <button class="tab" onclick="show('comparacao')">Comparação final</button>
+</div>
+
+<!-- INTRO -->
+<div id="intro" class="panel active">
+  <div class="section-title">Os três padrões de comunicação — por que confundem?</div>
+  <div class="section-sub">Observer, Mediator e Chain of Responsibility todos tratam de como objetos se comunicam. A diferença está em <strong>quem conhece quem</strong> e <strong>como a mensagem flui</strong>.</div>
+  <div class="prob">
+    <strong>Observer</strong> — um objeto notifica vários interessados quando algo muda.<br>
+    Comunicação 1 → N. Os observadores se inscrevem para receber eventos.<br><br>
+    <strong>Mediator</strong> — objetos não se comunicam diretamente; passam por um intermediário central.<br>
+    Comunicação N → 1 → N. Reduz o acoplamento entre componentes.<br><br>
+    <strong>Chain of Responsibility</strong> — a requisição passa por uma cadeia de handlers até alguém tratá-la.<br>
+    Comunicação linear. Cada handler decide processar ou passar adiante.
+  </div>
+  <div class="flow">
+    <div class="fhi">Pedido pronto</div><div class="fa">→ notifica →</div>
+    <div class="fb">Cozinha + Entregador + Cliente</div><div class="fa">(Observer)</div>
+  </div>
+  <div class="flow">
+    <div class="fb">Atendente + Cozinha + Caixa</div><div class="fa">→ falam com →</div>
+    <div class="fhi">Gerente</div><div class="fa">→ coordena todos (Mediator)</div>
+  </div>
+  <div class="flow">
+    <div class="fb">Pedido especial</div><div class="fa">→</div>
+    <div class="fb">Atendente</div><div class="fa">→</div>
+    <div class="fb">Supervisor</div><div class="fa">→</div>
+    <div class="fhi">Gerente</div><div class="fa">(Chain)</div>
+  </div>
+</div>
+
+<!-- OBSERVER PROBLEMA -->
+<div id="observer-prob" class="panel">
+  <div class="section-title">Observer — o problema</div>
+  <div class="section-sub">Quando um pedido fica pronto na cozinha, vários setores precisam saber: o entregador para buscar, o caixa para liberar cobrança, o cliente para rastrear. Como notificar todos sem a cozinha conhecer cada um deles?</div>
+  <div class="prob">
+    <strong>Sem Observer:</strong> a cozinha chama cada setor diretamente:<br><br>
+    <code>entregador.buscarPizza(); caixa.liberarCobranca(); cliente.notificar();</code><br><br>
+    Problema: a cozinha está acoplada a todos. Adicionar um novo interessado (ex: sistema de estoque) exige abrir o código da cozinha.
+  </div>
+  <div class="hi">
+    <strong>Com Observer:</strong> a cozinha apenas dispara um evento "pedido pronto". Quem quiser saber se inscreve. A cozinha não conhece nenhum dos interessados — só sabe que existe uma lista de observadores para notificar.
+  </div>
+  <h3>Papéis</h3>
+  <div class="flow">
+    <div class="fhi">Subject (Cozinha)</div><div class="fa">→ notifica →</div>
+    <div class="fb">Observer 1 (Entregador)</div><div class="fa">+</div>
+    <div class="fb">Observer 2 (Caixa)</div><div class="fa">+</div>
+    <div class="fb">Observer 3 (Cliente)</div>
+  </div>
+</div>
+
+<!-- OBSERVER CÓDIGO -->
+<div id="observer-cod" class="panel">
+  <div class="section-title">Observer — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// INTERFACE OBSERVER — qualquer interessado implementa</span>
+<span class="kw">interface</span> <span class="cl">Observer</span> {
+    <span class="kw">void</span> <span class="mt">atualizar</span>(String pedido);
+}
+
+<span class="cm">// INTERFACE SUBJECT — quem dispara eventos</span>
+<span class="kw">interface</span> <span class="cl">Subject</span> {
+    <span class="kw">void</span> <span class="mt">inscrever</span>(<span class="cl">Observer</span> o);
+    <span class="kw">void</span> <span class="mt">desinscrever</span>(<span class="cl">Observer</span> o);
+    <span class="kw">void</span> <span class="mt">notificarTodos</span>(String pedido);
+}
+
+<span class="cm">// SUBJECT CONCRETO — a cozinha</span>
+<span class="kw">class</span> <span class="cl">Cozinha</span> <span class="kw">implements</span> <span class="cl">Subject</span> {
+    <span class="kw">private</span> List&lt;<span class="cl">Observer</span>&gt; observers = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="mt">inscrever</span>(<span class="cl">Observer</span> o)    { observers.add(o); }
+    <span class="kw">public void</span> <span class="mt">desinscrever</span>(<span class="cl">Observer</span> o) { observers.remove(o); }
+
+    <span class="kw">public void</span> <span class="mt">notificarTodos</span>(String pedido) {
+        observers.<span class="mt">forEach</span>(o -> o.<span class="mt">atualizar</span>(pedido));
+    }
+
+    <span class="kw">public void</span> <span class="mt">pedidoPronto</span>(String pedido) {
+        System.out.println(<span class="st">"[Cozinha] Pedido pronto: "</span> + pedido);
+        <span class="mt">notificarTodos</span>(pedido); <span class="cm">// dispara para todos os inscritos</span>
+    }
+}
+
+<span class="cm">// OBSERVERS CONCRETOS</span>
+<span class="kw">class</span> <span class="cl">Entregador</span> <span class="kw">implements</span> <span class="cl">Observer</span> {
+    <span class="kw">public void</span> <span class="mt">atualizar</span>(String pedido) {
+        System.out.println(<span class="st">"[Entregador] Buscando: "</span> + pedido);
+    }
+}
+<span class="kw">class</span> <span class="cl">Caixa</span> <span class="kw">implements</span> <span class="cl">Observer</span> {
+    <span class="kw">public void</span> <span class="mt">atualizar</span>(String pedido) {
+        System.out.println(<span class="st">"[Caixa] Liberando cobrança: "</span> + pedido);
+    }
+}
+<span class="kw">class</span> <span class="cl">ClienteApp</span> <span class="kw">implements</span> <span class="cl">Observer</span> {
+    <span class="kw">public void</span> <span class="mt">atualizar</span>(String pedido) {
+        System.out.println(<span class="st">"[App] Notificando cliente: "</span> + pedido);
+    }
+}
+
+<span class="cm">// USO</span>
+<span class="cl">Cozinha</span> cozinha = <span class="kw">new</span> <span class="cl">Cozinha</span>();
+cozinha.<span class="mt">inscrever</span>(<span class="kw">new</span> <span class="cl">Entregador</span>());
+cozinha.<span class="mt">inscrever</span>(<span class="kw">new</span> <span class="cl">Caixa</span>());
+cozinha.<span class="mt">inscrever</span>(<span class="kw">new</span> <span class="cl">ClienteApp</span>());
+
+cozinha.<span class="mt">pedidoPronto</span>(<span class="st">"Pizza Margherita"</span>);
+<span class="cm">// [Cozinha] Pedido pronto: Pizza Margherita</span>
+<span class="cm">// [Entregador] Buscando: Pizza Margherita</span>
+<span class="cm">// [Caixa] Liberando cobrança: Pizza Margherita</span>
+<span class="cm">// [App] Notificando cliente: Pizza Margherita</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> eventos do Spring (<code>ApplicationEvent</code> / <code>@EventListener</code>) são Observer. Qualquer sistema de notificação por webhook, o padrão pub/sub do Kafka, e até a interface <code>PropertyChangeListener</code> do Java são implementações desse padrão.
+  </div>
+</div>
+
+<!-- MEDIATOR PROBLEMA -->
+<div id="mediator-prob" class="panel">
+  <div class="section-title">Mediator — o problema</div>
+  <div class="section-sub">A pizzaria tem vários setores que precisam se coordenar: atendente registra pedido, cozinha precisa saber, entregador precisa ser acionado, caixa precisa cobrar. Se todos se comunicam diretamente entre si, vira uma teia de dependências.</div>
+  <div class="prob">
+    <strong>Sem Mediator:</strong> cada setor conhece todos os outros diretamente.<br><br>
+    Atendente chama Cozinha. Cozinha chama Entregador. Entregador chama Caixa. Caixa chama Cliente.<br><br>
+    Com 5 setores se comunicando livremente = até 20 conexões diretas. Mudar qualquer um impacta todos os outros.
+  </div>
+  <div class="hi">
+    <strong>Com Mediator:</strong> nenhum setor conhece os outros. Todos falam com o Gerente (mediador), que coordena quem deve ser notificado. Adicionar um novo setor = só registrar no Gerente.
+  </div>
+  <div class="prob">
+    <strong>Diferença do Observer:</strong> no Observer há um subject que notifica N observers — ainda é uma relação direta 1→N. No Mediator, ninguém se comunica diretamente com ninguém — tudo passa pelo mediador central, que decide o fluxo.
+  </div>
+</div>
+
+<!-- MEDIATOR CÓDIGO -->
+<div id="mediator-cod" class="panel">
+  <div class="section-title">Mediator — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// INTERFACE MEDIATOR</span>
+<span class="kw">interface</span> <span class="cl">Mediator</span> {
+    <span class="kw">void</span> <span class="mt">notificar</span>(<span class="cl">Setor</span> remetente, String evento);
+}
+
+<span class="cm">// COMPONENTE BASE — cada setor conhece só o mediador</span>
+<span class="kw">abstract class</span> <span class="cl">Setor</span> {
+    <span class="kw">protected</span> <span class="cl">Mediator</span> mediator;
+    <span class="kw">public</span> <span class="cl">Setor</span>(<span class="cl">Mediator</span> mediator) { <span class="kw">this</span>.mediator = mediator; }
+}
+
+<span class="cm">// SETORES CONCRETOS — nenhum conhece os outros</span>
+<span class="kw">class</span> <span class="cl">Atendente</span> <span class="kw">extends</span> <span class="cl">Setor</span> {
+    <span class="kw">public</span> <span class="cl">Atendente</span>(<span class="cl">Mediator</span> m) { <span class="kw">super</span>(m); }
+    <span class="kw">public void</span> <span class="mt">registrarPedido</span>(String pedido) {
+        System.out.println(<span class="st">"[Atendente] Registrando pedido: "</span> + pedido);
+        mediator.<span class="mt">notificar</span>(<span class="kw">this</span>, <span class="st">"pedido_registrado:"</span> + pedido);
+    }
+}
+
+<span class="kw">class</span> <span class="cl">Cozinha</span> <span class="kw">extends</span> <span class="cl">Setor</span> {
+    <span class="kw">public</span> <span class="cl">Cozinha</span>(<span class="cl">Mediator</span> m) { <span class="kw">super</span>(m); }
+    <span class="kw">public void</span> <span class="mt">prepararPedido</span>(String pedido) {
+        System.out.println(<span class="st">"[Cozinha] Preparando: "</span> + pedido);
+        mediator.<span class="mt">notificar</span>(<span class="kw">this</span>, <span class="st">"pedido_pronto:"</span> + pedido);
+    }
+}
+
+<span class="kw">class</span> <span class="cl">Entregador</span> <span class="kw">extends</span> <span class="cl">Setor</span> {
+    <span class="kw">public</span> <span class="cl">Entregador</span>(<span class="cl">Mediator</span> m) { <span class="kw">super</span>(m); }
+    <span class="kw">public void</span> <span class="mt">entregar</span>(String pedido) {
+        System.out.println(<span class="st">"[Entregador] Saindo com: "</span> + pedido);
+        mediator.<span class="mt">notificar</span>(<span class="kw">this</span>, <span class="st">"pedido_entregue:"</span> + pedido);
+    }
+}
+
+<span class="kw">class</span> <span class="cl">Caixa</span> <span class="kw">extends</span> <span class="cl">Setor</span> {
+    <span class="kw">public</span> <span class="cl">Caixa</span>(<span class="cl">Mediator</span> m) { <span class="kw">super</span>(m); }
+    <span class="kw">public void</span> <span class="mt">cobrar</span>(String pedido) {
+        System.out.println(<span class="st">"[Caixa] Cobrança efetuada: "</span> + pedido);
+    }
+}
+
+<span class="cm">// MEDIATOR CONCRETO — o Gerente coordena o fluxo</span>
+<span class="kw">class</span> <span class="cl">GerentePizzaria</span> <span class="kw">implements</span> <span class="cl">Mediator</span> {
+    <span class="kw">public</span> <span class="cl">Atendente</span>  atendente;
+    <span class="kw">public</span> <span class="cl">Cozinha</span>    cozinha;
+    <span class="kw">public</span> <span class="cl">Entregador</span> entregador;
+    <span class="kw">public</span> <span class="cl">Caixa</span>      caixa;
+
+    <span class="kw">public void</span> <span class="mt">notificar</span>(<span class="cl">Setor</span> remetente, String evento) {
+        <span class="kw">if</span> (evento.<span class="mt">startsWith</span>(<span class="st">"pedido_registrado"</span>)) {
+            String pedido = evento.<span class="mt">split</span>(<span class="st">":"</span>)[1];
+            cozinha.<span class="mt">prepararPedido</span>(pedido);
+        } <span class="kw">else if</span> (evento.<span class="mt">startsWith</span>(<span class="st">"pedido_pronto"</span>)) {
+            String pedido = evento.<span class="mt">split</span>(<span class="st">":"</span>)[1];
+            entregador.<span class="mt">entregar</span>(pedido);
+        } <span class="kw">else if</span> (evento.<span class="mt">startsWith</span>(<span class="st">"pedido_entregue"</span>)) {
+            String pedido = evento.<span class="mt">split</span>(<span class="st">":"</span>)[1];
+            caixa.<span class="mt">cobrar</span>(pedido);
+        }
+    }
+}
+
+<span class="cm">// USO</span>
+<span class="cl">GerentePizzaria</span> gerente = <span class="kw">new</span> <span class="cl">GerentePizzaria</span>();
+gerente.atendente  = <span class="kw">new</span> <span class="cl">Atendente</span>(gerente);
+gerente.cozinha    = <span class="kw">new</span> <span class="cl">Cozinha</span>(gerente);
+gerente.entregador = <span class="kw">new</span> <span class="cl">Entregador</span>(gerente);
+gerente.caixa      = <span class="kw">new</span> <span class="cl">Caixa</span>(gerente);
+
+gerente.atendente.<span class="mt">registrarPedido</span>(<span class="st">"Pizza Calabresa"</span>);
+<span class="cm">// [Atendente] Registrando pedido: Pizza Calabresa</span>
+<span class="cm">// [Cozinha] Preparando: Pizza Calabresa</span>
+<span class="cm">// [Entregador] Saindo com: Pizza Calabresa</span>
+<span class="cm">// [Caixa] Cobrança efetuada: Pizza Calabresa</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> o barramento de eventos de um ERP é um Mediator — módulos disparam eventos sem saber quem vai processar. No front-end, o padrão Flux/Redux é Mediator puro. Em microsserviços, o API Gateway centraliza a comunicação entre serviços como um Mediator.
+  </div>
+</div>
+
+<!-- CHAIN PROBLEMA -->
+<div id="chain-prob" class="panel">
+  <div class="section-title">Chain of Responsibility — o problema</div>
+  <div class="section-sub">A pizzaria tem uma política de descontos: pedidos até R$50 o atendente aprova; até R$100 o supervisor aprova; acima disso só o gerente. Cada nível só escalona se não puder tratar.</div>
+  <div class="prob">
+    <strong>Sem Chain:</strong> um único método com vários ifs aninhados, ou o solicitante precisa saber exatamente quem chamar dependendo do valor. O código de quem pede o desconto fica acoplado à hierarquia de aprovação.
+  </div>
+  <div class="hi">
+    <strong>Com Chain:</strong> cada aprovador sabe seu limite. Se puder tratar, trata. Se não puder, passa para o próximo na cadeia. O solicitante só conhece o primeiro da cadeia — não sabe quem vai resolver.
+  </div>
+  <div class="prob">
+    <strong>Diferença do Mediator:</strong> no Mediator há um centro que conhece todos e coordena. Na Chain não há centro — a requisição percorre a cadeia linearmente e cada handler decide se processa ou passa adiante. Pode não chegar ao final.
+  </div>
+  <h3>Fluxo</h3>
+  <div class="flow">
+    <div class="fb">Pedido de desconto</div><div class="fa">→</div>
+    <div class="fb">Atendente (até R$50)</div><div class="fa">→ não pode →</div>
+    <div class="fb">Supervisor (até R$100)</div><div class="fa">→ não pode →</div>
+    <div class="fhi">Gerente (sem limite)</div>
+  </div>
+</div>
+
+<!-- CHAIN CÓDIGO -->
+<div id="chain-cod" class="panel">
+  <div class="section-title">Chain of Responsibility — código</div>
+<div class="code-block"><span class="lbl">Java</span><span class="cm">// HANDLER BASE — cada aprovador conhece o próximo</span>
+<span class="kw">abstract class</span> <span class="cl">AprovadorDesconto</span> {
+    <span class="kw">protected</span> <span class="cl">AprovadorDesconto</span> proximo;
+
+    <span class="kw">public</span> <span class="cl">AprovadorDesconto</span> <span class="mt">setProximo</span>(<span class="cl">AprovadorDesconto</span> proximo) {
+        <span class="kw">this</span>.proximo = proximo;
+        <span class="kw">return</span> proximo; <span class="cm">// permite encadeamento fluente</span>
+    }
+
+    <span class="kw">public abstract void</span> <span class="mt">aprovar</span>(<span class="kw">double</span> valor);
+}
+
+<span class="cm">// HANDLERS CONCRETOS</span>
+<span class="kw">class</span> <span class="cl">Atendente</span> <span class="kw">extends</span> <span class="cl">AprovadorDesconto</span> {
+    <span class="kw">public void</span> <span class="mt">aprovar</span>(<span class="kw">double</span> valor) {
+        <span class="kw">if</span> (valor <= 50) {
+            System.out.println(<span class="st">"[Atendente] Desconto de R$"</span> + valor + <span class="st">" aprovado."</span>);
+        } <span class="kw">else if</span> (proximo != <span class="kw">null</span>) {
+            System.out.println(<span class="st">"[Atendente] Fora do meu limite. Escalando..."</span>);
+            proximo.<span class="mt">aprovar</span>(valor);
+        }
+    }
+}
+
+<span class="kw">class</span> <span class="cl">Supervisor</span> <span class="kw">extends</span> <span class="cl">AprovadorDesconto</span> {
+    <span class="kw">public void</span> <span class="mt">aprovar</span>(<span class="kw">double</span> valor) {
+        <span class="kw">if</span> (valor <= 100) {
+            System.out.println(<span class="st">"[Supervisor] Desconto de R$"</span> + valor + <span class="st">" aprovado."</span>);
+        } <span class="kw">else if</span> (proximo != <span class="kw">null</span>) {
+            System.out.println(<span class="st">"[Supervisor] Fora do meu limite. Escalando..."</span>);
+            proximo.<span class="mt">aprovar</span>(valor);
+        }
+    }
+}
+
+<span class="kw">class</span> <span class="cl">Gerente</span> <span class="kw">extends</span> <span class="cl">AprovadorDesconto</span> {
+    <span class="kw">public void</span> <span class="mt">aprovar</span>(<span class="kw">double</span> valor) {
+        System.out.println(<span class="st">"[Gerente] Desconto de R$"</span> + valor + <span class="st">" aprovado pelo gerente."</span>);
+    }
+}
+
+<span class="cm">// USO — monta a cadeia e só aciona o primeiro</span>
+<span class="cl">Atendente</span>  atendente  = <span class="kw">new</span> <span class="cl">Atendente</span>();
+<span class="cl">Supervisor</span> supervisor = <span class="kw">new</span> <span class="cl">Supervisor</span>();
+<span class="cl">Gerente</span>    gerente    = <span class="kw">new</span> <span class="cl">Gerente</span>();
+
+<span class="cm">// Encadeamento fluente</span>
+atendente.<span class="mt">setProximo</span>(supervisor).<span class="mt">setProximo</span>(gerente);
+
+atendente.<span class="mt">aprovar</span>(30);
+<span class="cm">// [Atendente] Desconto de R$30.0 aprovado.</span>
+
+atendente.<span class="mt">aprovar</span>(80);
+<span class="cm">// [Atendente] Fora do meu limite. Escalando...</span>
+<span class="cm">// [Supervisor] Desconto de R$80.0 aprovado.</span>
+
+atendente.<span class="mt">aprovar</span>(200);
+<span class="cm">// [Atendente] Fora do meu limite. Escalando...</span>
+<span class="cm">// [Supervisor] Fora do meu limite. Escalando...</span>
+<span class="cm">// [Gerente] Desconto de R$200.0 aprovado pelo gerente.</span>
+</div>
+  <div class="ok">
+    <strong>Onde você já viu isso:</strong> filtros HTTP do Java EE e do Spring Security são uma cadeia — cada filtro processa ou passa adiante. Pipelines de validação de dados (valida CPF → valida endereço → valida pagamento) seguem a mesma lógica. No Datasul, fluxos de aprovação de pedido de compra por alçada são Chain of Responsibility aplicado a processo de negócio.
+  </div>
+</div>
+
+<!-- COMPARAÇÃO -->
+<div id="comparacao" class="panel">
+  <div class="section-title">Comparação final — Observer, Mediator e Chain</div>
+  <table class="diff-table">
+    <tr><th>Critério</th><th>Observer</th><th>Mediator</th><th>Chain of Responsibility</th></tr>
+    <tr><td>Fluxo da comunicação</td><td>1 → N (broadcast)</td><td>N → 1 → N (hub central)</td><td>Linear (passa adiante)</td></tr>
+    <tr><td>Quem conhece quem?</td><td>Subject conhece observers</td><td>Ninguém conhece ninguém — só o mediador</td><td>Cada handler conhece só o próximo</td></tr>
+    <tr><td>A requisição chega a todos?</td><td>Sim — todos são notificados</td><td>O mediador decide quem acionar</td><td>Não — para quando alguém trata</td></tr>
+    <tr><td>Analogia pizzaria</td><td>Cozinha notifica entregador, caixa e cliente</td><td>Gerente coordena atendente, cozinha e entregador</td><td>Desconto escalona por alçada</td></tr>
+  </table>
+  <div class="hi">
+    <strong>Pergunta de decisão:</strong><br><br>
+    "Vários interessados precisam reagir ao mesmo evento?" → <strong>Observer</strong><br>
+    "Muitos componentes se comunicam e estão acoplados demais entre si?" → <strong>Mediator</strong><br>
+    "A requisição deve percorrer uma hierarquia até alguém resolvê-la?" → <strong>Chain of Responsibility</strong>
+  </div>
+  <div class="warn">
+    <strong>Dica de entrevista:</strong> a diferença entre Observer e Mediator é sutil mas importante. No Observer o subject ainda tem uma lista de dependentes — há acoplamento indireto. No Mediator nenhum componente sabe da existência dos outros — o acoplamento é zero entre eles, concentrado apenas no mediador. Quando o entrevistador perguntar qual usar, a pergunta chave é: <em>"os componentes precisam se conhecer minimamente, ou devem ser completamente isolados?"</em>
+  </div>
+</div>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Singleton — A Pizzaria</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+
+  header {
+    background: #1a1d27;
+    border-bottom: 1px solid #2d3148;
+    padding: 20px 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 1.3rem; color: #fb923c; letter-spacing: 0.03em; }
+  header p  { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+
+  .tabs {
+    display: flex;
+    background: #1a1d27;
+    border-bottom: 1px solid #2d3148;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 14px 22px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #64748b;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    background: none;
+    border-top: none; border-left: none; border-right: none;
+  }
+  .tab:hover { color: #fdba74; }
+  .tab.active { color: #fb923c; border-bottom-color: #fb923c; }
+
+  .panel { display: none; padding: 24px; max-width: 900px; margin: 0 auto; }
+  .panel.active { display: block; }
+
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .section-sub   { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+
+  .problem-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .problem-box strong { color: #fbbf24; }
+
+  .code-block {
+    background: #12141c;
+    border: 1px solid #2d3148;
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    position: relative;
+    white-space: pre;
+  }
+  .code-block .label {
+    position: absolute;
+    top: 10px; right: 14px;
+    font-family: system-ui, sans-serif;
+    font-size: 0.7rem;
+    color: #475569;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .kw  { color: #c084fc; }
+  .cl  { color: #67e8f9; }
+  .mt  { color: #86efac; }
+  .st  { color: #fde68a; }
+  .cm  { color: #475569; font-style: italic; }
+  .an  { color: #fb923c; }
+
+  .highlight-box {
+    background: #1e2030;
+    border: 1px solid #fb923c44;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #fdba74;
+    line-height: 1.7;
+  }
+  .highlight-box strong { color: #fb923c; }
+
+  .warn-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-left: 4px solid #f87171;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .warn-box strong { color: #fca5a5; }
+
+  .ok-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-left: 4px solid #34d399;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.7;
+  }
+  .ok-box strong { color: #6ee7b7; }
+
+  .diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-bottom: 20px;
+  }
+  .diff-table th {
+    background: #1e2030;
+    color: #fb923c;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    border-bottom: 2px solid #2d3148;
+  }
+  .diff-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #1e2030;
+    color: #cbd5e1;
+    vertical-align: top;
+  }
+  .diff-table tr:nth-child(even) td { background: #12141c; }
+
+  .arrow-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0 20px;
+    font-size: 0.8rem;
+  }
+  .flow-box {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: #e2e8f0;
+    white-space: nowrap;
+  }
+  .flow-single {
+    background: #2a1f0e;
+    border: 1px solid #fb923c55;
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: #fb923c;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .flow-arrow { color: #4b5563; font-size: 1rem; }
+
+  h3 { font-size: 0.9rem; color: #94a3b8; margin: 20px 0 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .versus {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 600px) { .versus { grid-template-columns: 1fr; } }
+
+  .versus-card {
+    background: #1e2030;
+    border: 1px solid #2d3148;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .versus-card h4 { font-size: 0.85rem; margin-bottom: 10px; font-weight: 700; }
+  .versus-card p  { font-size: 0.82rem; color: #94a3b8; line-height: 1.6; }
+  .versus-card.bad  { border-left: 4px solid #f87171; }
+  .versus-card.bad  h4 { color: #fca5a5; }
+  .versus-card.good { border-left: 4px solid #34d399; }
+  .versus-card.good h4 { color: #6ee7b7; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Singleton</h1>
+  <p>Um único gerente para toda a pizzaria — e por que isso importa</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('problema')">1. O problema</button>
+  <button class="tab" onclick="show('analogia')">2. A analogia</button>
+  <button class="tab" onclick="show('sem-singleton')">3. Sem Singleton</button>
+  <button class="tab" onclick="show('com-singleton')">4. Com Singleton</button>
+  <button class="tab" onclick="show('thread')">5. Cuidado: threads</button>
+  <button class="tab" onclick="show('quando')">6. Quando usar</button>
+</div>
+
+<!-- ===== 1. PROBLEMA ===== -->
+<div id="problema" class="panel active">
+  <div class="section-title">O problema que o Singleton resolve</div>
+  <div class="section-sub">Alguns recursos do sistema precisam existir em uma única instância. Criar mais de uma causa inconsistências, desperdício ou comportamento imprevisível.</div>
+
+  <div class="problem-box">
+    <strong>Exemplos reais:</strong><br><br>
+    — Pool de conexões com o banco: se cada classe criar o seu próprio, você abre centenas de conexões desnecessárias.<br><br>
+    — Logger: se cada módulo criar um logger diferente, os logs vão para lugares diferentes e perdem a ordem cronológica.<br><br>
+    — Configuração da aplicação: se cada parte ler e guardar as configs separadamente, uma pode ter valor diferente da outra.<br><br>
+    — Fila de pedidos de uma pizzaria: se existirem duas filas paralelas, os atendentes não sabem qual seguir.
+  </div>
+
+  <div class="highlight-box">
+    <strong>O Singleton garante:</strong> apenas uma instância da classe existe em toda a aplicação, e qualquer parte do código que precisar dela vai receber sempre a mesma.
+  </div>
+
+  <h3>As duas responsabilidades do Singleton</h3>
+  <div class="arrow-flow">
+    <div class="flow-box">1. Impedir que new seja chamado diretamente</div>
+    <div class="flow-arrow">+</div>
+    <div class="flow-box">2. Oferecer um ponto de acesso global à instância única</div>
+  </div>
+</div>
+
+<!-- ===== 2. ANALOGIA ===== -->
+<div id="analogia" class="panel">
+  <div class="section-title">A analogia da pizzaria</div>
+  <div class="section-sub">A pizzaria tem um único Gerente de Pedidos. Ele controla a fila, o estoque e a ordem de produção. Não faz sentido ter dois — causaria caos.</div>
+
+  <div class="problem-box">
+    <strong>Cenário sem controle:</strong><br><br>
+    Atendente 1 abre sua própria fila de pedidos.<br>
+    Atendente 2 abre outra fila separada.<br>
+    Pizzaiolo não sabe qual fila seguir.<br>
+    Pedido 5 da fila 1 conflita com pedido 5 da fila 2.<br>
+    <strong>Resultado: caos, pedidos perdidos, cliente insatisfeito.</strong>
+  </div>
+
+  <div class="highlight-box">
+    <strong>Com Singleton:</strong> existe um único Gerente de Pedidos. Qualquer atendente que precisar registrar um pedido acessa sempre o mesmo gerente — e ele mantém a fila consistente para toda a pizzaria.
+  </div>
+
+  <h3>Fluxo visual</h3>
+  <div class="arrow-flow">
+    <div class="flow-box">Atendente 1</div>
+    <div class="flow-arrow">→ getInstance()</div>
+    <div class="flow-single">GerentePedidos (único)</div>
+    <div class="flow-arrow">← getInstance()</div>
+    <div class="flow-box">Atendente 2</div>
+  </div>
+  <div class="arrow-flow">
+    <div class="flow-box">Pizzaiolo</div>
+    <div class="flow-arrow">→ getInstance()</div>
+    <div class="flow-single">GerentePedidos (o mesmo)</div>
+  </div>
+
+  <div class="ok-box">
+    <strong>Todos apontam para o mesmo objeto.</strong> Não importa quantas vezes <code>getInstance()</code> for chamado — sempre retorna a mesma instância.
+  </div>
+</div>
+
+<!-- ===== 3. SEM SINGLETON ===== -->
+<div id="sem-singleton" class="panel">
+  <div class="section-title">Sem Singleton — o que acontece</div>
+  <div class="section-sub">Cada atendente cria seu próprio gerente. A fila fica fragmentada.</div>
+
+<div class="code-block"><span class="label">Java</span><span class="cm">// Sem Singleton — qualquer um pode criar uma instância nova</span>
+<span class="kw">class</span> <span class="cl">GerentePedidos</span> {
+    <span class="kw">private</span> List&lt;String&gt; fila = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+    <span class="kw">public void</span> <span class="mt">adicionarPedido</span>(String pedido) {
+        fila.add(pedido);
+        System.out.println(<span class="st">"Pedido adicionado: "</span> + pedido);
+    }
+
+    <span class="kw">public void</span> <span class="mt">mostrarFila</span>() {
+        System.out.println(<span class="st">"Fila atual: "</span> + fila);
+    }
+}
+
+<span class="cm">// Atendente 1 cria SEU gerente</span>
+<span class="cl">GerentePedidos</span> gerente1 = <span class="kw">new</span> <span class="cl">GerentePedidos</span>();
+gerente1.<span class="mt">adicionarPedido</span>(<span class="st">"Pizza Calabresa"</span>);
+gerente1.<span class="mt">adicionarPedido</span>(<span class="st">"Pizza Frango"</span>);
+
+<span class="cm">// Atendente 2 cria OUTRO gerente — objeto diferente!</span>
+<span class="cl">GerentePedidos</span> gerente2 = <span class="kw">new</span> <span class="cl">GerentePedidos</span>();
+gerente2.<span class="mt">adicionarPedido</span>(<span class="st">"Pizza Margherita"</span>);
+
+<span class="cm">// Pizzaiolo pergunta pela fila — mas qual gerente consultar?</span>
+gerente1.<span class="mt">mostrarFila</span>(); <span class="cm">// Fila atual: [Pizza Calabresa, Pizza Frango]</span>
+gerente2.<span class="mt">mostrarFila</span>(); <span class="cm">// Fila atual: [Pizza Margherita]</span>
+
+<span class="cm">// A pizza Margherita sumiu da visão do gerente1!</span>
+<span class="cm">// Dois estados diferentes — inconsistência total.</span>
+</div>
+
+  <div class="warn-box">
+    <strong>O problema:</strong> <code>gerente1</code> e <code>gerente2</code> são objetos diferentes na memória. Cada um tem sua própria fila. Nenhum enxerga os pedidos do outro. O estado da aplicação ficou partido em dois.
+  </div>
+</div>
+
+<!-- ===== 4. COM SINGLETON ===== -->
+<div id="com-singleton" class="panel">
+  <div class="section-title">Com Singleton — a solução</div>
+  <div class="section-sub">O construtor é privado. A única forma de acessar o gerente é pelo método estático <code>getInstance()</code>, que cria a instância na primeira chamada e reutiliza nas demais.</div>
+
+<div class="code-block"><span class="label">Java</span><span class="kw">class</span> <span class="cl">GerentePedidos</span> {
+
+    <span class="cm">// 1. A única instância fica guardada aqui — estática e privada</span>
+    <span class="kw">private static</span> <span class="cl">GerentePedidos</span> instancia = <span class="kw">null</span>;
+
+    <span class="kw">private</span> List&lt;String&gt; fila = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+    <span class="cm">// 2. Construtor PRIVADO — ninguém de fora pode chamar "new"</span>
+    <span class="kw">private</span> <span class="cl">GerentePedidos</span>() {}
+
+    <span class="cm">// 3. Ponto de acesso global — cria só se ainda não existe</span>
+    <span class="kw">public static</span> <span class="cl">GerentePedidos</span> <span class="mt">getInstance</span>() {
+        <span class="kw">if</span> (instancia == <span class="kw">null</span>) {
+            instancia = <span class="kw">new</span> <span class="cl">GerentePedidos</span>(); <span class="cm">// cria UMA vez</span>
+        }
+        <span class="kw">return</span> instancia; <span class="cm">// sempre retorna a mesma</span>
+    }
+
+    <span class="kw">public void</span> <span class="mt">adicionarPedido</span>(String pedido) {
+        fila.add(pedido);
+        System.out.println(<span class="st">"Pedido adicionado: "</span> + pedido);
+    }
+
+    <span class="kw">public void</span> <span class="mt">mostrarFila</span>() {
+        System.out.println(<span class="st">"Fila atual: "</span> + fila);
+    }
+}
+
+<span class="cm">// Atendente 1 acessa o gerente</span>
+<span class="cl">GerentePedidos</span> g1 = <span class="cl">GerentePedidos</span>.<span class="mt">getInstance</span>();
+g1.<span class="mt">adicionarPedido</span>(<span class="st">"Pizza Calabresa"</span>);
+g1.<span class="mt">adicionarPedido</span>(<span class="st">"Pizza Frango"</span>);
+
+<span class="cm">// Atendente 2 acessa — recebe O MESMO objeto</span>
+<span class="cl">GerentePedidos</span> g2 = <span class="cl">GerentePedidos</span>.<span class="mt">getInstance</span>();
+g2.<span class="mt">adicionarPedido</span>(<span class="st">"Pizza Margherita"</span>);
+
+<span class="cm">// Pizzaiolo consulta — estado unificado</span>
+g1.<span class="mt">mostrarFila</span>(); <span class="cm">// Fila atual: [Pizza Calabresa, Pizza Frango, Pizza Margherita]</span>
+g2.<span class="mt">mostrarFila</span>(); <span class="cm">// Fila atual: [Pizza Calabresa, Pizza Frango, Pizza Margherita]</span>
+
+<span class="cm">// Confirmando que são o mesmo objeto na memória</span>
+System.out.println(g1 == g2); <span class="cm">// true</span>
+</div>
+
+  <div class="highlight-box">
+    <strong>O que mudou:</strong> o construtor é privado — ninguém pode chamar <code>new GerentePedidos()</code>. O <code>getInstance()</code> é a única porta de entrada. Na primeira chamada cria; nas seguintes, devolve a mesma. Um único estado para toda a aplicação.
+  </div>
+</div>
+
+<!-- ===== 5. THREADS ===== -->
+<div id="thread" class="panel">
+  <div class="section-title">Cuidado: Singleton em ambiente multithread</div>
+  <div class="section-sub">A implementação básica tem uma falha: se dois atendentes chamarem <code>getInstance()</code> ao mesmo tempo, antes da instância ser criada, podem acabar criando dois objetos.</div>
+
+  <div class="warn-box">
+    <strong>O problema de corrida (race condition):</strong><br><br>
+    Thread A verifica: <code>instancia == null</code> → verdadeiro → vai criar<br>
+    Thread B verifica: <code>instancia == null</code> → verdadeiro → vai criar também<br>
+    Resultado: dois objetos criados. O Singleton quebrou.
+  </div>
+
+  <h3>Solução 1 — synchronized (simples, mas mais lento)</h3>
+<div class="code-block"><span class="label">Java</span><span class="kw">public static synchronized</span> <span class="cl">GerentePedidos</span> <span class="mt">getInstance</span>() {
+    <span class="kw">if</span> (instancia == <span class="kw">null</span>) {
+        instancia = <span class="kw">new</span> <span class="cl">GerentePedidos</span>();
+    }
+    <span class="kw">return</span> instancia;
+}
+<span class="cm">// Garante exclusividade, mas bloqueia todas as threads em cada chamada.</span>
+</div>
+
+  <h3>Solução 2 — Double-checked locking (recomendada)</h3>
+<div class="code-block"><span class="label">Java</span><span class="kw">private static volatile</span> <span class="cl">GerentePedidos</span> instancia = <span class="kw">null</span>;
+
+<span class="kw">public static</span> <span class="cl">GerentePedidos</span> <span class="mt">getInstance</span>() {
+    <span class="kw">if</span> (instancia == <span class="kw">null</span>) {                    <span class="cm">// 1ª verificação — sem lock</span>
+        <span class="kw">synchronized</span> (<span class="cl">GerentePedidos</span>.<span class="kw">class</span>) {
+            <span class="kw">if</span> (instancia == <span class="kw">null</span>) {             <span class="cm">// 2ª verificação — com lock</span>
+                instancia = <span class="kw">new</span> <span class="cl">GerentePedidos</span>();
+            }
+        }
+    }
+    <span class="kw">return</span> instancia;
+}
+<span class="cm">// Bloqueia só na criação. Depois, acesso sem custo.</span>
+</div>
+
+  <h3>Solução 3 — Initialization-on-demand (a mais elegante em Java)</h3>
+<div class="code-block"><span class="label">Java</span><span class="kw">class</span> <span class="cl">GerentePedidos</span> {
+    <span class="kw">private</span> <span class="cl">GerentePedidos</span>() {}
+
+    <span class="cm">// A JVM garante que esta classe interna é carregada uma única vez</span>
+    <span class="kw">private static class</span> <span class="cl">Holder</span> {
+        <span class="kw">static final</span> <span class="cl">GerentePedidos</span> INSTANCIA = <span class="kw">new</span> <span class="cl">GerentePedidos</span>();
+    }
+
+    <span class="kw">public static</span> <span class="cl">GerentePedidos</span> <span class="mt">getInstance</span>() {
+        <span class="kw">return</span> <span class="cl">Holder</span>.INSTANCIA;
+    }
+}
+<span class="cm">// Thread-safe sem synchronized. Criação lazy. Sem volatile. Preferida.</span>
+</div>
+
+  <div class="highlight-box">
+    <strong>Para o dia a dia:</strong> use o padrão Holder (solução 3) quando precisar de Singleton thread-safe em Java. É a mais limpa e a JVM cuida de toda a sincronia.
+  </div>
+</div>
+
+<!-- ===== 6. QUANDO USAR ===== -->
+<div id="quando" class="panel">
+  <div class="section-title">Quando usar — e quando evitar</div>
+  <div class="section-sub">O Singleton é o padrão mais simples de entender e o mais fácil de usar errado.</div>
+
+  <div class="versus">
+    <div class="versus-card good">
+      <h4>Use Singleton quando...</h4>
+      <p>
+        — Um único ponto de controle faz sentido no domínio (fila, log, config, cache, pool de conexões).<br><br>
+        — O objeto é caro para criar e pode ser compartilhado com segurança.<br><br>
+        — O estado precisa ser consistente em toda a aplicação.
+      </p>
+    </div>
+    <div class="versus-card bad">
+      <h4>Evite Singleton quando...</h4>
+      <p>
+        — Você só quer evitar passar parâmetros entre classes — isso é acoplamento disfarçado.<br><br>
+        — O objeto tem estado mutável acessado por muitas threads sem controle.<br><br>
+        — Você quer facilidade de testes unitários — Singleton dificulta mocking.
+      </p>
+    </div>
+  </div>
+
+  <table class="diff-table">
+    <tr>
+      <th>Os 5 padrões de criação — resumo final</th>
+      <th>Pergunta que responde</th>
+    </tr>
+    <tr>
+      <td>Factory Method</td>
+      <td>Qual subclasse cria este objeto?</td>
+    </tr>
+    <tr>
+      <td>Abstract Factory</td>
+      <td>Como garantir que objetos relacionados sejam compatíveis?</td>
+    </tr>
+    <tr>
+      <td>Builder</td>
+      <td>Como montar um objeto complexo passo a passo?</td>
+    </tr>
+    <tr>
+      <td>Prototype</td>
+      <td>Como criar variações de um objeto já existente?</td>
+    </tr>
+    <tr>
+      <td><strong>Singleton</strong></td>
+      <td><strong>Como garantir que só exista uma instância de uma classe?</strong></td>
+    </tr>
+  </table>
+
+  <div class="warn-box">
+    <strong>Dica de entrevista:</strong> se perguntarem sobre Singleton, mencione espontaneamente o problema de threads e as soluções. Isso diferencia quem leu a definição de quem entende o padrão de verdade. E se perguntarem "quando você não usaria Singleton?" — dificuldade de testar unitariamente é a resposta que os avaliadores mais valorizam.
+  </div>
+
+  <div class="ok-box">
+    <strong>Onde você já viu Singleton sem saber:</strong> o <code>ApplicationContext</code> do Spring é gerenciado como Singleton por padrão — cada bean que você declara com <code>@Service</code>, <code>@Repository</code> ou <code>@Component</code> é, na prática, um Singleton dentro do container.
+  </div>
+</div>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
