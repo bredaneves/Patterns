@@ -1,0 +1,3 @@
+INTERFACE Ingrediente:
+    METHOD PUBLIC VOID descrever().
+END INTERFACE.

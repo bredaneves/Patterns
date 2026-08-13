@@ -1,0 +1,3 @@
+INTERFACE Massa:
+    METHOD PUBLIC VOID descrever().
+END INTERFACE.

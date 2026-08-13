@@ -1,0 +1,3 @@
+INTERFACE Molho:
+    METHOD PUBLIC VOID descrever().
+END INTERFACE.
