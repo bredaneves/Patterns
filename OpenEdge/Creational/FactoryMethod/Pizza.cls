@@ -1,0 +1,3 @@
+INTERFACE Pizza:
+    METHOD PUBLIC VOID preparar().
+END INTERFACE.
