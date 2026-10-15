@@ -1,0 +1,4 @@
+Adicione um quarto ingrediente, Clams (FreshClams para NY e FrozenClams para Chicago): inclua createClams() na interface PizzaIngredientFactory e crie uma ClamPizza. Ao alterar a interface, o compilador vai apontar as duas fábricas que ficaram sem o método. É isso que garante a consistência da família.
+Crie uma terceira região (CaliforniaPizzaIngredientFactory e CaliforniaPizzaStore) sem alterar Pizza, CheesePizza nem PizzaStore.
+Compare com o Java: em TypeScript as interfaces somem em tempo de execução e a tipagem é estrutural, então o implements serve para o compilador conferir o contrato, e não para o runtime.
+Escreva com suas palavras a diferença entre Factory Method e Abstract Factory, que costuma ser a pergunta de entrevista sobre esses dois padrões. Me mande a sua resposta e eu comento.

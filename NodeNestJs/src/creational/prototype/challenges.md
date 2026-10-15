@@ -1,0 +1,5 @@
+Quebre o polimorfismo de propósito: comente o clone() da StuffedCrustPizza e rode de novo. O clone() herdado cria uma Pizza comum e o recheio some. Anote por que isso acontece e por que cada subclasse precisa sobrescrever o clone().
+Aprofunde o objeto: adicione ingredients: string[] dentro de Dough e veja o { ...this.dough } falhar para esse campo (a cópia continua rasa no segundo nível). Corrija e anote quando vale escrever a cópia na mão e quando vale uma solução genérica.
+Teste o structuredClone: rode const c = structuredClone(base2); console.log(c.describe());. O Node tem esse clone profundo nativo, mas o resultado é um objeto simples, sem os métodos da classe. Explique por que, e em que tipo de objeto (só dados) ele serve bem.
+Compare com o Factory Method: quando você preferiria clonar um objeto pré-configurado em vez de criar um novo por fábrica? Pense em construção cara, muitas variações pré-montadas e variações definidas em tempo de execução.
+Escreva com suas palavras a diferença entre o Prototype do GoF e a cadeia de protótipos do JavaScript. Me mande a resposta e eu comento.
