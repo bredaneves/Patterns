@@ -1,0 +1,5 @@
+/* INTERFACE MEDIATOR */
+
+INTERFACE Mediator:
+    METHOD VOID notificar(INPUT remetente AS Setor, INPUT evento AS CHARACTER).
+END INTERFACE.
