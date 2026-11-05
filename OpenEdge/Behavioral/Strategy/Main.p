@@ -7,4 +7,4 @@ caixa:setFormaPagamento(new PagamentoPix()).
 caixa:finalizarPedido(50.0). /* Pago via Pix: R$47.5 (com desconto) */
 
 caixa:setFormaPagamento(new PagamentoCartao()).
-caixa:finalizarPedido(50.0). /* Pago no cartão: R$51.5 (com taxa) */
+caixa:finalizarPedido(50.0). /* Pago no cartao: R$51.5 (com taxa) */
