@@ -1,0 +1,6 @@
+/* INTERFACE ITERATOR */
+
+INTERFACE IteradorCardapio :
+    METHOD LOGICAL temProximo().
+    METHOD CHARACTER proximo().
+END INTERFACE.
